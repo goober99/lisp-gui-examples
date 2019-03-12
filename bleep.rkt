@@ -129,7 +129,7 @@
                                  [callback generate-tone]))
 ; Set frequency to specific note
 (define (set-note choice event)
-  (set-frequency (hash-ref notes (send note get-string-selection))))
+  (set-frequency (hash-ref notes (send choice get-string-selection))))
 (define note (new choice% [label "♪ "]
                           [choices '("A" "B" "C" "D" "E" "F" "G")]
                           [parent control-pane]
