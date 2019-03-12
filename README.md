@@ -34,4 +34,4 @@ tool, suffice it to say, any port to another platform would also require an
 alternative to beep.
 
 ## License
-[Artistic License 2.0](www.perlfoundation.org/artistic_license_2_0)
+[Artistic License 2.0](https://www.perlfoundation.org/artistic-license-20.html)
