@@ -22,7 +22,7 @@ note about ioctl" in the [README](https://github.com/johnath/beep) for beep.
 
 ```bash
 git clone https://github.com/goober99/lisp-gui-examples.git
-cd lisp-gui-examples
+cd lisp-gui-examples/examples/racket
 sudo racket bleep.rkt
 ```
 
