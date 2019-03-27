@@ -26,8 +26,8 @@
 ; Generate a tone using the beep utility
 (define (generate-tone parent widget event x y)
   ; Make sure neither frequency or duration were left blank
-  (cond ((= (string-length (glgui-widget-get parent frequency-field 'label)) 0) (set-frequency 1)))
-  (cond ((= (string-length (glgui-widget-get parent duration-field 'label)) 0) (glgui-widget-set! parent duration-field 'label "1 ms")))
+  (if (= (string-length (glgui-widget-get parent frequency-field 'label)) 0) (set-frequency 1))
+  (if (= (string-length (glgui-widget-get parent duration-field 'label)) 0) (glgui-widget-set! parent duration-field 'label "1 ms"))
   (shell-command (string-append "beep -f " (chop-units (glgui-widget-get parent frequency-field 'label))
                                 " -l " (chop-units (glgui-widget-get parent duration-field 'label)))))
 
@@ -53,7 +53,7 @@
 ;; Buttons increase and decrease frequency by one octave
 (define (adjust-octave modifier)
   (let ((new-freq (* (string->number (chop-units (glgui-widget-get gui frequency-field 'label))) modifier)))
-    (cond ((and (>= new-freq *min-frequency*) (<= new-freq *max-frequency*)) (set-frequency new-freq)))))
+    (if (and (>= new-freq *min-frequency*) (<= new-freq *max-frequency*)) (set-frequency new-freq))))
 (define (decrease-octave parent widget event x y) (adjust-octave 0.5))
 (define (increase-octave parent widget event x y) (adjust-octave 2))
 ;; Set frequency to specific note
@@ -107,7 +107,7 @@
     (glgui-widget-set! gui frequency-field 'aftercharcb (lambda (parent widget event x y)
       (frequency-range parent widget)
       (let ((freq (string->number (glgui-widget-get parent widget 'label))))
-        (cond (freq (glgui-widget-set! parent slider 'value (frequency->position freq)))))))
+        (if freq (glgui-widget-set! parent slider 'value (frequency->position freq))))))
 
      ;; Octave buttons
     (set! lower-button (glgui-button-string gui 140 230 50 30 "<" ascii_18.fnt decrease-octave))
