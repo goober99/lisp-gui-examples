@@ -23,7 +23,7 @@
                              (5 . 349.23)    ; F
                              (6 . 292.00)))) ; G
 
-; Generate a tone using the beep utility
+;; Generate a tone using the beep utility
 (define (generate-tone parent widget event x y)
   ; Make sure neither frequency or duration were left blank
   (if (= (string-length (glgui-widget-get parent frequency-field 'label)) 0) (set-frequency 1))
