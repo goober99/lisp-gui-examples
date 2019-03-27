@@ -6,7 +6,7 @@
 (define *background-color* (color-rgb 26 26 29))
 (define *foreground-color* (color-rgb 195 7 63))
 (define *accent-color* (color-rgb 111 34 50))
-(define *text-color* (color-rgb 255 255 255))lo
+(define *text-color* (color-rgb 255 255 255))
 ;; Scale used by slider
 (define *min-position* 0)
 (define *max-position* 2000)
