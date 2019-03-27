@@ -56,9 +56,6 @@
     (if (and (>= new-freq *min-frequency*) (<= new-freq *max-frequency*)) (set-frequency new-freq))))
 (define (decrease-octave parent widget event x y) (adjust-octave 0.5))
 (define (increase-octave parent widget event x y) (adjust-octave 2))
-;; Set frequency to specific note
-(define (set-note parent widget event x y)
-  (set-frequency (table-ref notes (glgui-widget-get parent widget 'current))))
 
 ;; User input
 
@@ -139,7 +136,8 @@
         (list "A" "B" "C" "D" "E" "F" "G"))
       *accent-color* *foreground-color* *accent-color*))
     (glgui-widget-set! gui note 'scrollcolor *accent-color*)
-    (glgui-widget-set! gui note 'callback set-note)
+    (glgui-widget-set! gui note 'callback (lambda (parent widget event x y)
+      (set-frequency (table-ref notes (glgui-widget-get parent widget 'current)))))
 
   )
 ;; events
