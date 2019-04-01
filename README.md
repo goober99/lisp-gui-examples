@@ -34,6 +34,9 @@ cd lambdanative
 sudo ./bleep
 ```
 
+To build the example from source, see the README in the `lambdanative` example
+directory.
+
 ### Racket
 
 ![Screenshot](screenshots/racket.png?raw=true "Racket screenshot")
