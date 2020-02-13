@@ -1,7 +1,6 @@
 #lang racket
 
 (require racket/gui)
-(require rsound)
 
 ; Scale used by slider
 (define *min-position* 0)
@@ -22,9 +21,9 @@
 
 ; Generate a tone using the beep utility
 (define (generate-tone button event)
-  (play (make-tone  (string->number (send frequency-field get-value))
-                    0.5
-                    (* 22 (string->number (send duration-field get-value))))))
+  (system (format "beep -f ~a -l ~a"
+                  (send frequency-field get-value)
+                  (send duration-field get-value))))
 
 ; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
 ; Adapted from https://stackoverflow.com/questions/846221/logarithmic-slider
