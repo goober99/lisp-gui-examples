@@ -20,11 +20,14 @@
                     "F" 349.23
                     "G" 292.00))
 
-; Generate a tone using the beep utility
+; Generate a tone using RSound
+; Explicitly set RSound sample rate in case differs by platform/version
+(default-sample-rate 44100)
 (define (generate-tone button event)
-  (play (make-tone  (string->number (send frequency-field get-value))
-                    0.5
-                    (* 22 (string->number (send duration-field get-value))))))
+  (play (make-tone (string->number (send frequency-field get-value))
+                   0.5
+                   ; Duration in samples at sample rate of 44.1 kHz
+                   (inexact->exact (* 44.1 (string->number (send duration-field get-value)))))))
 
 ; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
 ; Adapted from https://stackoverflow.com/questions/846221/logarithmic-slider
