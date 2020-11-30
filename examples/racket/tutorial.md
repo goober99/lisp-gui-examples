@@ -1,14 +1,12 @@
 Racket is a Scheme-like dialect of Lisp that has a powerful cross-platform GUI
 library built in. Instead of building yet another calculator, let's build a GUI
-front end for the Linux command line tool
-[beep](https://github.com/johnath/beep) that can be used to control the PC
-speaker.
+for generating a tone.
 
 ![Screenshot](../../screenshots/racket.png?raw=true "Example screenshot")
 
-You'll need beep installed. You'll also need Racket installed, of course. Both
-are available in the repositories of most Linux distros, so just install them
-from your distro's repo. Then you're ready to begin.
+You'll need Racket installed, of course. It's available in the repositories of
+most Linux distros, so just install it from your distro's repo. Then you're
+ready to begin.
 
 ```scheme
 #lang racket
@@ -34,8 +32,8 @@ let's add some additional widgets between creating the window and showing it.
 
 ```scheme
 (define slider (new slider% [label #f]
-                            [min-value 1]
-                            [max-value 19999]
+                            [min-value 20]
+                            [max-value 20000]
                             [parent frame]
                             [init-value 440]
                             [style '(horizontal plain)]
@@ -43,17 +41,18 @@ let's add some additional widgets between creating the window and showing it.
                             [horiz-margin 10]))
 ```
 
-The range of frequencies accepted by beep is any number greater than 0 and less
-than 20,000. The [musical note A above middle
+The range of frequencies audible by humans is typically between 20 Hz and 20
+KHz (we lose the ability to hear some of those higher frequencies as we age).
+The [musical note A above middle
 C](https://en.wikipedia.org/wiki/A440_(pitch_standard)) is 440 Hz. Since A4
 serves as a general tuning standard, it seems like a sensible default, but if
 you run the above in Racket, this is what you'll see:
 
-![Slider](../../screenshots/racket-linearslider.png?raw=true "Slider showing 440 on a scale of 1 to 19,999")
+![Slider](../../screenshots/racket-linearslider.png?raw=true "Slider showing 440 using a linear scale")
 
-The scale of 1 to 19,999 is so large that 440 doesn't appear to move the slider
-at all. Ideally, 440 would fall about the middle of the slider. To achieve
-this, let's use a logarithmic scale.
+The scale of 20 to 20,000 is so large that 440 doesn't appear to move the
+slider at all. Ideally, 440 would fall about the middle of the slider. To
+achieve this, let's use a logarithmic scale.
 
 I found a [Stack Overflow
 answer](https://stackoverflow.com/questions/846221/logarithmic-slider/846249#846249)
@@ -65,8 +64,8 @@ JavaScript, but it was easy enough to port to Racket.
 (define *min-position* 0)
 (define *max-position* 2000)
 ; Range of frequencies
-(define *min-frequency* 1)
-(define *max-frequency* 19999)
+(define *min-frequency* 20)
+(define *max-frequency* 20000)
 
 ; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
 ; Adapted from https://stackoverflow.com/questions/846221/logarithmic-slider
@@ -182,7 +181,7 @@ interval between one musical pitch and another with double its frequency."
 
 If you slide the slider, the text field updates accordingly. If you type a
 number in the text field, the slider updates accordingly. All good, right? What
-if a user (and you know they will) enters a number higher than 19,999 or a
+if a user (and you know they will) enters a number higher than 20,000 or a
 letter?
 
 The widgets included with Racket are pretty basic, but we can extend the
@@ -274,16 +273,21 @@ the `set-frequency` helper function we created for the octave buttons.
 Finally, let's make some noise.
 
 ```scheme
-; Generate a tone using the beep utility
+; Generate a tone using RSound
+; Explicitly set RSound sample rate in case differs by platform/version
+(default-sample-rate 44100)
 (define (generate-tone button event)
-  (system (format "beep -f ~a -l ~a"
-                  (send frequency-field get-value)
-                  (send duration-field get-value))))
+  (play (make-tone (string->number (send frequency-field get-value))
+                   0.5
+                   ; Duration in samples at sample rate of 44.1 kHz
+                   (inexact->exact (* 44.1 (string->number (send duration-field get-value)))))))
 ```
 
-We'll use `system` to execute a shell command that calls the beep command line
-tool. Wire this up to a button between the duration and note selector, and
-you're ready to make some noise.
+We'll use the Racket [RSound](https://docs.racket-lang.org/rsound/index.html)
+package to generate the tone. This package isn't bundled with Racket, but you
+can install it with the `raco` utility that comes with Racket (`raco pkg
+install rsound`). Wire this up to a button between the duration and note
+selector, and you're ready to make some noise.
 
 ```scheme
 (define play-button (new button% [parent control-pane]

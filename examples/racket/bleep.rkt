@@ -7,8 +7,8 @@
 (define *min-position* 0)
 (define *max-position* 2000)
 ; Range of frequencies
-(define *min-frequency* 1)
-(define *max-frequency* 19999)
+(define *min-frequency* 20)
+(define *max-frequency* 20000)
 
 ; Notes -> frequency (middle A-G [A4-G4])
 ; http://pages.mtu.edu/~suits/notefreqs.html
