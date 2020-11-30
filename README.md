@@ -44,8 +44,8 @@ Navigate to the `racket` example subdirectory and execute bleep.rkt with
 Racket.
 
 ```bash
-cd racket
 raco pkg install rsound
+cd racket
 racket bleep.rkt
 ```
 
