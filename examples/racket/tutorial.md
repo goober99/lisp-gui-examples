@@ -273,6 +273,8 @@ the `set-frequency` helper function we created for the octave buttons.
 Finally, let's make some noise.
 
 ```scheme
+(require rsound)
+
 ; Generate a tone using RSound
 ; Explicitly set RSound sample rate in case differs by platform/version
 (default-sample-rate 44100)
