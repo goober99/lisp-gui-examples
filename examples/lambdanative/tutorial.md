@@ -25,9 +25,7 @@ The LambdaNative wiki gives a [list of
 dependencies](https://github.com/part-cw/lambdanative/wiki/Getting-Started#required-tools-and-libraries)
 that need to be installed with your distro's package manager before installing
 LambdaNative. They give an `apt` command you can copy and paste to your
-terminal to install all the needed dependencies on Ubuntu. I didn't need to
-install anything on Manjaro to get LambdaNative working, but I didn't test it
-on a clean install of Manjaro.
+terminal to install all the needed dependencies on Ubuntu.
 
 * Download the most recent [release](https://github.com/part-cw/lambdanative/releases).
 
