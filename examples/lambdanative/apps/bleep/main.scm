@@ -23,13 +23,42 @@
                              (5 . 349.23)    ; F
                              (6 . 292.00)))) ; G
 
+;; Register C-side real-time audio hooks
+(c-declare  #<<end-of-c-declare
+
+#include <math.h>
+
+void rtaudio_register(void (*)(int), void (*)(float), void (*)(float*,float*));
+
+double srate=0;
+float buffer;
+
+void my_realtime_init(int samplerate) { srate=(double)samplerate; buffer=0; }
+void my_realtime_input(float v) { }
+void my_realtime_output(float *v1,float *v2) {
+  static double t=0;
+  buffer = 0.95*sin(2*M_PI*440.*t);
+  *v1=*v2=(float)buffer;
+  t+=1/srate;
+}
+
+end-of-c-declare
+)
+(c-initialize "rtaudio_register(my_realtime_init,my_realtime_input,my_realtime_output);")
+
 ;; Generate a tone using the beep utility
+(define tone-sounding #f)
+(define tone-end 0)
 (define (generate-tone parent widget event x y)
   ; Make sure neither frequency or duration were left blank
   (if (= (string-length (glgui-widget-get parent frequency-field 'label)) 0) (set-frequency 1))
   (if (= (string-length (glgui-widget-get parent duration-field 'label)) 0) (glgui-widget-set! parent duration-field 'label "1 ms"))
-  (shell-command (string-append "beep -f " (chop-units (glgui-widget-get parent frequency-field 'label))
-                                " -l " (chop-units (glgui-widget-get parent duration-field 'label)))))
+  (rtaudio-start 8000 0.5)
+  (set! tone-sounding #t)
+  (set! tone-end (+ (current-milliseconds) (string->number (chop-units (glgui-widget-get parent duration-field 'label))))))
+
+;;  (shell-command (string-append "beep -f " (chop-units (glgui-widget-get parent frequency-field 'label))
+;;                                " -l " (chop-units (glgui-widget-get parent duration-field 'label)))))
 
 ;; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
 ;; Adapted from https://stackoverflow.com/questions/846221/logarithmic-slider
@@ -146,6 +175,9 @@
       (if (= x EVENT_KEYESCAPE) (terminate))))
     ;; Also update frequency when dragging slider (callback is only on release)
     (if (and (glgui-widget-get gui slider 'downval) (= t EVENT_MOTION)) (adjust-frequency))
+    (cond [(and tone-sounding (>= (current-milliseconds) tone-end))
+      (rtaudio-stop)
+      (set! tone-sounding #f)])
     (glgui-event gui t x y))
 ;; termination
   (lambda () #t)
