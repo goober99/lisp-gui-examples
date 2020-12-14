@@ -47,14 +47,12 @@ end-of-c-declare
 (c-initialize "rtaudio_register(my_realtime_init,my_realtime_input,my_realtime_output);")
 
 ;; Generate a tone using the beep utility
-(define tone-sounding #f)
-(define tone-end 0)
+(define tone-end #f)
 (define (generate-tone parent widget event x y)
   ; Make sure neither frequency or duration were left blank
   (if (= (string-length (glgui-widget-get parent frequency-field 'label)) 0) (set-frequency 1))
   (if (= (string-length (glgui-widget-get parent duration-field 'label)) 0) (glgui-widget-set! parent duration-field 'label "1 ms"))
   (rtaudio-start 8000 0.5)
-  (set! tone-sounding #t)
   (set! tone-end (+ (current-milliseconds) (string->number (chop-units (glgui-widget-get parent duration-field 'label))))))
 
 ;;  (shell-command (string-append "beep -f " (chop-units (glgui-widget-get parent frequency-field 'label))
@@ -175,9 +173,9 @@ end-of-c-declare
       (if (= x EVENT_KEYESCAPE) (terminate))))
     ;; Also update frequency when dragging slider (callback is only on release)
     (if (and (glgui-widget-get gui slider 'downval) (= t EVENT_MOTION)) (adjust-frequency))
-    (cond [(and tone-sounding (>= (current-milliseconds) tone-end))
+    (cond [(and tone-end (>= (current-milliseconds) tone-end))
       (rtaudio-stop)
-      (set! tone-sounding #f)])
+      (set! tone-end #f)])
     (glgui-event gui t x y))
 ;; termination
   (lambda () #t)
