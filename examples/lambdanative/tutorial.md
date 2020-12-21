@@ -6,18 +6,14 @@ get started with LambdaNative.
 
 LambdaNative already includes a calculator demo, and frankly, I find making a
 millionth calculator example to be a little dull. Instead I'll be building a
-GUI front end for the Linux command line tool
-[beep](https://github.com/johnath/beep) that can be used to control the PC
-speaker. We're only going to be building a desktop GUI, so we aren't going to
-be tapping into the full power of LambdaNative. Where it seems LambdaNative
-would really be useful is enabling you to write cross-platform mobile apps with
-Scheme! Unfortunately, that is outside the scope of this tutorial. Maybe in the
-future I'll revisit LambdaNative and use it to create a mobile app.
+GUI for generating a tone. We're only going to be building a desktop GUI, so we
+aren't going to be tapping into the full power of LambdaNative. Where it seems
+LambdaNative would really be useful is enabling you to write cross-platform
+mobile apps with Scheme! Unfortunately, that is outside the scope of this
+tutorial. Maybe in the future I'll revisit LambdaNative and use it to create a
+mobile app.
 
 ![Screenshot](../../screenshots/lambdanative.png?raw=true "Example screenshot")
-
-You'll need beep installed. It is available in the repositories of most Linux
-distros, so just install it from your distro's repo.
 
 ## Installing LambdaNative
 
@@ -250,7 +246,7 @@ contains the basic skeleton for a GUI app (the black rectangle above):
 I started by changing the comment at the top to
 
 ```scheme
-;; bleep - GUI frontend for beep made with LambdaNative
+;; bleep - GUI for generating a tone made with LambdaNative
 ```
 
 The bulk of the skeleton consists of the [event
@@ -352,12 +348,13 @@ throughout its examples and documentation. I prefer to use more descriptive
 variable names. Replace the fonts in the example slider code with the fonts we
 specified in the `FONTS` file. I also disabled the slider labels.
 
-The range of frequencies accepted by beep is any number greater than 0 and less
-than 20,000. The [musical note A above middle
+The range of frequencies audible by humans is typically between 20 Hz and 20
+KHz (we lose the ability to hear some of those higher frequencies as we age).
+The [musical note A above middle
 C](https://en.wikipedia.org/wiki/A440_(pitch_standard)) is 440 Hz. Since A4
 serves as a general tuning standard, it seems like a sensible default.
 
-The scale of 1 to 19,999 is so large that 440 wouldn't appear to move the
+The scale of 20 to 20,000 is so large that 440 wouldn't appear to move the
 slider at all. Ideally, 440 would fall about the middle of the slider. To
 achieve this, let's use a logarithmic scale.
 
@@ -548,7 +545,7 @@ the text field).
 
 The `'aftercharcb` callback is called after each character is typed or deleted.
 We can use this to update the slider as a user enters a frequency. What if a
-user (and you know they will) enters a number higher than 19,999 or a letter?
+user (and you know they will) enters a number higher than 20,000 or a letter?
 We need a function that will only allow numbers within a given range.
 
 ```scheme
@@ -643,20 +640,78 @@ drop-down menu, we'll look up the frequency in the table and set it using the
   (set-frequency (table-ref notes (glgui-widget-get parent widget 'current)))))
 ```
 
-Finally, let's make some noise.
+Now, let's make some noise. LambdaNative has a rtaudio module. We'll use that
+to generate a tone with a sine wave. Edit the `MODULES` file in your
+applications subdirectory and add rtaudio to the list. The Scheme API of the
+rtaudio module consists of essentially just two functions: `rtaudio-start` and
+`rtaudio-stop`. You must first register four real-time hooks (an initialization
+hook, input hook, output hook, and close hook) in a chunk of C code embedded
+within your Scheme code. I wish the rtaudio module had an API that allowed
+implementing these hooks in pure Scheme. Thankfully the
+[DemoRTAudio](https://github.com/part-cw/lambdanative/tree/master/apps/DemoRTAudio)
+app included with LambdaNative implements a sine wave, and I was able to copy
+and paste most of what I needed from there without spending a lot of time
+trying to figure out how to write a sine wave in C myself.
 
 ```scheme
-;; Generate a tone using the beep utility
+;; Register C-side real-time audio hooks
+(c-declare  #<<end-of-c-declare
+
+#include <math.h>
+
+void rtaudio_register(void (*)(int), void (*)(float), void (*)(float*,float*), void (*)(void));
+
+double f;
+double srate=0;
+float buffer;
+
+void my_realtime_init(int samplerate) { srate=(double)samplerate; buffer=0; }
+void my_realtime_input(float v) { }
+void my_realtime_output(float *v1,float *v2) {
+  static double t=0;
+  buffer = 0.95*sin(2*M_PI*f*t);
+  *v1=*v2=(float)buffer;
+  t+=1/srate;
+}
+void my_realtime_close() { buffer=0; }
+
+end-of-c-declare
+)
+(c-initialize "rtaudio_register(my_realtime_init,my_realtime_input,my_realtime_output,my_realtime_close);")
+```
+
+The [basic formula for a sine
+wave](http://pld.cs.luc.edu/telecom/mnotes/digitized_sound.html) is A sin(2πft)
+where *A* is amplitude, *f* is frequency, and *t* is time. We need a way to
+pass the frequency from our slider in the Scheme to the output hook in the C.
+Gambit scheme has a `c-lambda` special form that makes it possible to create a
+Scheme function that is a representative of a C function or code sequence.
+
+```scheme
+(define rtaudio-frequency (c-lambda (double) void "f=___arg1;"))
+```
+
+This creates a Scheme function that sets the f variable in our C chunk. Now
+let's create a Schem function that will set the frequency and start and stop
+the real-time audio subsystem.
+
+```scheme
+;; Generate a tone using the rtaudio module
 (define (generate-tone parent widget event x y)
   ; Make sure neither frequency or duration were left blank
   (if (= (string-length (glgui-widget-get parent frequency-field 'label)) 0) (set-frequency 1))
   (if (= (string-length (glgui-widget-get parent duration-field 'label)) 0) (glgui-widget-set! parent duration-field 'label "1 ms"))
-  (shell-command (string-append "beep -f " (chop-units (glgui-widget-get parent frequency-field 'label))
-                                " -l " (chop-units (glgui-widget-get parent duration-field 'label)))))
+  (rtaudio-frequency (exact->inexact (string->number (chop-units (glgui-widget-get parent frequency-field 'label)))))
+  (rtaudio-start 44100 0.5)
+  (thread-sleep! (/ (string->number (chop-units (glgui-widget-get parent duration-field 'label))) 1000))
+  (rtaudio-stop))
 ```
 
-We'll use `shell-command` to execute the beep command line tool. Wire this up
-to the play button, and you're ready to make some noise.
+When playing a note such as B4 (493.88 Hz) that has a decimal point, the type
+passed from Scheme to C lines up with the C type `float`, but when passing an
+integer (such as 440), it will cause an error. The `exact->inexact` conversion
+forces Scheme to pass the value along as a `float`. Wire this up to the play
+button, and you're ready to make some noise.
 
 ```scheme
 (set! play-button (glgui-button-string gui 230 125 80 50 "Play" ascii_25.fnt generate-tone))

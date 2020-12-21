@@ -1,4 +1,4 @@
-;; bleep - GUI frontend for beep made with LambdaNative
+;; bleep - GUI for generating a tone made with LambdaNative
 
 (define gui #f)
 
@@ -11,8 +11,8 @@
 (define *min-position* 0)
 (define *max-position* 2000)
 ;; Range of frequencies
-(define *min-frequency* 1)
-(define *max-frequency* 19999)
+(define *min-frequency* 20)
+(define *max-frequency* 20000)
 ;; Notes -> frequency (middle A-G [A4-G4])
 ;; http://pages.mtu.edu/~suits/notefreqs.html
 (define notes (list->table '((0 . 440.00)    ; A
@@ -23,13 +23,41 @@
                              (5 . 349.23)    ; F
                              (6 . 292.00)))) ; G
 
-;; Generate a tone using the beep utility
+;; Register C-side real-time audio hooks
+(c-declare  #<<end-of-c-declare
+
+#include <math.h>
+
+void rtaudio_register(void (*)(int), void (*)(float), void (*)(float*,float*), void (*)(void));
+
+double f;
+double srate=0;
+float buffer;
+
+void my_realtime_init(int samplerate) { srate=(double)samplerate; buffer=0; }
+void my_realtime_input(float v) { }
+void my_realtime_output(float *v1,float *v2) {
+  static double t=0;
+  buffer = 0.95*sin(2*M_PI*f*t);
+  *v1=*v2=(float)buffer;
+  t+=1/srate;
+}
+void my_realtime_close() { buffer=0; }
+
+end-of-c-declare
+)
+(c-initialize "rtaudio_register(my_realtime_init,my_realtime_input,my_realtime_output,my_realtime_close);")
+(define rtaudio-frequency (c-lambda (double) void "f=___arg1;"))
+
+;; Generate a tone using the rtaudio module
 (define (generate-tone parent widget event x y)
   ; Make sure neither frequency or duration were left blank
   (if (= (string-length (glgui-widget-get parent frequency-field 'label)) 0) (set-frequency 1))
   (if (= (string-length (glgui-widget-get parent duration-field 'label)) 0) (glgui-widget-set! parent duration-field 'label "1 ms"))
-  (shell-command (string-append "beep -f " (chop-units (glgui-widget-get parent frequency-field 'label))
-                                " -l " (chop-units (glgui-widget-get parent duration-field 'label)))))
+  (rtaudio-frequency (exact->inexact (string->number (chop-units (glgui-widget-get parent frequency-field 'label)))))
+  (rtaudio-start 44100 0.5)
+  (thread-sleep! (/ (string->number (chop-units (glgui-widget-get parent duration-field 'label))) 1000))
+  (rtaudio-stop))
 
 ;; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
 ;; Adapted from https://stackoverflow.com/questions/846221/logarithmic-slider

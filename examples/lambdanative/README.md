@@ -1,6 +1,6 @@
 # Building
 
-* [Set up LambdaNative.](https://dev.to/goober99/learn-lambdanative-by-example-desktop-gui-277l#installing-lambdanative)
+* [Set up LambdaNative.](https://github.com/goober99/lisp-gui-examples/blob/master/examples/lambdanative/tutorial.md#installing-lambdanative)
 
 * Copy `apps/bleep` into your LambdaNative apps directory (`cp -r apps/bleep ~/lambdanative/apps`).
 
