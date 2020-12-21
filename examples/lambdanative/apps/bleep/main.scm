@@ -155,7 +155,7 @@ end-of-c-declare
     (glgui-widget-set! gui duration-field 'align GUI_ALIGNCENTER)
     (glgui-widget-set! gui duration-field 'onfocuscb chop-units!)
     (set! duration-range (num-only 1 600000 (glgui-widget-get gui duration-field 'label)))
-    (glgui-widget-set! gui duration-field 'aftercharcb (lambda (parent widget event x y) (frequency-range parent widget)))
+    (glgui-widget-set! gui duration-field 'aftercharcb (lambda (parent widget event x y) (duration-range parent widget)))
     (glgui-label gui 410 40 60 30 "Note" ascii_18.fnt *foreground-color*)
     (set! note (glgui-dropdownbox gui 470 40 50 30
       (map (lambda (str)
