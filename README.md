@@ -20,13 +20,11 @@ cd lisp-gui-examples/examples
 ![Screenshot](screenshots/lambdanative.png?raw=true "LambdaNative screenshot")
 
 Navigate to the `lambdanative` example subdirectory and execute the `bleep`
-executable. You'll probably have to preface the command with `sudo` to actually
-control your PC speaker. See "A note about ioctl" in the
-[README](https://github.com/johnath/beep) for beep.
+executable.
 
 ```bash
 cd lambdanative
-sudo ./bleep
+./bleep
 ```
 
 To build the example from source, see the README in the `lambdanative` example
