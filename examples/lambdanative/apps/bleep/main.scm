@@ -53,10 +53,10 @@ end-of-c-declare
 (define (generate-tone parent widget event x y)
   ; Make sure neither frequency or duration were left blank
   (if (= (string-length (glgui-widget-get parent frequency-field 'label)) 0) (set-frequency 1))
-  (if (= (string-length (glgui-widget-get parent duration-field 'label)) 0) (glgui-widget-set! parent duration-field 'label "1 ms"))
-  (rtaudio-frequency (exact->inexact (string->number (chop-units (glgui-widget-get parent frequency-field 'label)))))
+  (if (= (string-length (glgui-widget-get parent duration-field 'label)) 0) (glgui-widget-set! parent duration-field 'label "1"))
+  (rtaudio-frequency (exact->inexact (string->number (glgui-widget-get parent frequency-field 'label))))
   (rtaudio-start 44100 0.5)
-  (thread-sleep! (/ (string->number (chop-units (glgui-widget-get parent duration-field 'label))) 1000))
+  (thread-sleep! (/ (string->number (glgui-widget-get parent duration-field 'label)) 1000))
   (rtaudio-stop))
 
 ;; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
@@ -72,34 +72,25 @@ end-of-c-declare
 (define (frequency->position freq) (/ (- (log freq) min-freq) (+ frequency-scale *min-position*)))
 ;; Link slider to text field display of frequency
 (define (adjust-frequency)
-  (glgui-widget-set! gui frequency-field 'label (string-append (number->string
-    (position->frequency (glgui-widget-get gui slider 'value))) " Hz")))
+  (glgui-widget-set! gui frequency-field 'label (number->string
+    (position->frequency (glgui-widget-get gui slider 'value)))))
 ;; Set frequency slider and display
 (define (set-frequency freq)
   (glgui-widget-set! gui slider 'value (frequency->position freq))
-  (glgui-widget-set! gui frequency-field 'label (string-append (number->string freq) " Hz")))
+  (glgui-widget-set! gui frequency-field 'label (number->string freq)))
 ;; Buttons increase and decrease frequency by one octave
 (define (adjust-octave modifier)
-  (let ((new-freq (* (string->number (chop-units (glgui-widget-get gui frequency-field 'label))) modifier)))
+  (let ((new-freq (* (string->number (glgui-widget-get gui frequency-field 'label)) modifier)))
     (if (and (>= new-freq *min-frequency*) (<= new-freq *max-frequency*)) (set-frequency new-freq))))
 (define (decrease-octave parent widget event x y) (adjust-octave 0.5))
 (define (increase-octave parent widget event x y) (adjust-octave 2))
 
 ;; User input
 
-;; Chop off units (Hz and ms) from value
-(define (chop-units text)
-  (let* ((text-length (string-length text))
-         ; Prevent negative position in string if text-length shorter than units
-         (text-pos (if (< (- text-length 3) 0) 0 (- text-length 3)))
-         (text-units (substring text text-pos text-length)))
-    (if (or (equal? text-units " Hz") (equal? text-units " ms")) (substring text 0 text-pos) text)))
-(define (chop-units! parent widget event x y)
-  (glgui-widget-set! parent widget 'label (chop-units (glgui-widget-get parent widget 'label))))
 ;; Only allow numbers within range of min-value and max-value
 (define (num-only min-value max-value old-value)
   (lambda (parent widget)
-    (let* ((current-value (chop-units (glgui-widget-get parent widget 'label)))
+    (let* ((current-value (glgui-widget-get parent widget 'label))
            (current-numified (string->number current-value)))
       (if (or (= (string-length current-value) 0) ; Allow field to be empty
               (and current-numified (>= current-numified min-value) (<= current-numified max-value)))
@@ -125,14 +116,15 @@ end-of-c-declare
     (glgui-widget-set! gui slider 'callback (lambda (parent widget event x y) (adjust-frequency)))
 
     ;; Frequency display
-    (set! frequency-field (glgui-inputlabel gui 210 230 120 30 "440 Hz" ascii_18.fnt *text-color* *foreground-color*))
+    (set! frequency-field (glgui-inputlabel gui 210 230 80 30 "440" ascii_18.fnt *text-color* *foreground-color*))
     (glgui-widget-set! gui frequency-field 'align GUI_ALIGNCENTER)
-    (glgui-widget-set! gui frequency-field 'onfocuscb chop-units!)
     (set! frequency-range (num-only *min-frequency* *max-frequency* (glgui-widget-get gui frequency-field 'label)))
     (glgui-widget-set! gui frequency-field 'aftercharcb (lambda (parent widget event x y)
       (frequency-range parent widget)
       (let ((freq (string->number (glgui-widget-get parent widget 'label))))
         (if freq (glgui-widget-set! parent slider 'value (frequency->position freq))))))
+    (set! frequency-label (glgui-label gui 290 230 40 30 "Hz" ascii_18.fnt *foreground-color* *accent-color*))
+    (glgui-widget-set! gui frequency-label 'align GUI_ALIGNCENTER)
 
      ;; Octave buttons
     (set! lower-button (glgui-button-string gui 140 230 50 30 "<" ascii_18.fnt decrease-octave))
@@ -151,11 +143,11 @@ end-of-c-declare
 
     ;; General Controls
     (glgui-label gui 20 40 80 30 "Duration" ascii_18.fnt *foreground-color*)
-    (set! duration-field (glgui-inputlabel gui 110 40 120 30 "200 ms" ascii_18.fnt *text-color* *foreground-color*))
+    (set! duration-field (glgui-inputlabel gui 110 40 80 30 "200" ascii_18.fnt *text-color* *foreground-color*))
     (glgui-widget-set! gui duration-field 'align GUI_ALIGNCENTER)
-    (glgui-widget-set! gui duration-field 'onfocuscb chop-units!)
     (set! duration-range (num-only 1 600000 (glgui-widget-get gui duration-field 'label)))
     (glgui-widget-set! gui duration-field 'aftercharcb (lambda (parent widget event x y) (duration-range parent widget)))
+    (glgui-label gui 195 40 40 30 "ms" ascii_18.fnt *foreground-color*)
     (glgui-label gui 410 40 60 30 "Note" ascii_18.fnt *foreground-color*)
     (set! note (glgui-dropdownbox gui 470 40 50 30
       (map (lambda (str)

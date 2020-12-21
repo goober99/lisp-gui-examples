@@ -391,8 +391,10 @@ increase/decrease the frequency by one octave, and a play button.
 
 ```scheme
 ;; Frequency display
-(set! frequency-field (glgui-inputlabel gui 210 230 120 30 "440 Hz" ascii_18.fnt *text-color* *foreground-color*))
+(set! frequency-field (glgui-inputlabel gui 210 230 80 30 "440" ascii_18.fnt *text-color* *foreground-color*))
 (glgui-widget-set! gui frequency-field 'align GUI_ALIGNCENTER)
+(set! frequency-label (glgui-label gui 290 230 40 30 "Hz" ascii_18.fnt *foreground-color* *accent-color*))
+(glgui-widget-set! gui frequency-label 'align GUI_ALIGNCENTER)
 
 ;; Octave buttons
 (set! lower-button (glgui-button-string gui 140 230 50 30 "<" ascii_18.fnt (lambda (g w t x y) #t)))
@@ -453,8 +455,8 @@ the one that corresponded to the position of the `glgui-slider`.
 ```scheme
 ;; Link slider to text field display of frequency
 (define (adjust-frequency)
-  (glgui-widget-set! gui frequency-field 'label (string-append (number->string
-    (position->frequency (glgui-widget-get gui slider 'value))) " Hz")))
+  (glgui-widget-set! gui frequency-field 'label (number->string
+    (position->frequency (glgui-widget-get gui slider 'value)))))
 ```
 
 and wired it up to the slider:
@@ -499,20 +501,6 @@ that LambdaNative was setting a `'downval` parameter whenever the user was
 holding down the mouse button on the slider handle. Whenever that parameter is
 true, I listen for an `EVENT_MOTION` event to call `adjust-frequency`.
 
-Before we can do anything with the text display of the frequency, we need a
-helper function that will strip the "Hz" string from the value, so we're left
-with a number we can do math operations with.
-
-```scheme
-;; Chop off units (Hz) from value
-(define (chop-units text)
-  (let* ((text-length (string-length text))
-         ; Prevent negative position in string if text-length shorter than units
-         (text-pos (if (< (- text-length 3) 0) 0 (- text-length 3)))
-         (text-units (substring text text-pos text-length)))
-    (if (equal? text-units " Hz") (substring text 0 text-pos) text)))
-```
-
 I replaced the anonymous lambdas in the octave button declarations with
 callback functions called `decrease-octave` and `increase-octave`. An
 [octave](https://en.wikipedia.org/wiki/Octave) is "the interval between one
@@ -522,37 +510,26 @@ musical pitch and another with double its frequency."
 ;; Set frequency slider and display
 (define (set-frequency freq)
   (glgui-widget-set! gui slider 'value (frequency->position freq))
-  (glgui-widget-set! gui frequency-field 'label (string-append (number->string freq) " Hz")))
+  (glgui-widget-set! gui frequency-field 'label (number->string freq)))
 ;; Buttons increase and decrease frequency by one octave
 (define (adjust-octave modifier)
-  (let ((new-freq (* (string->number (chop-units (glgui-widget-get gui frequency-field 'label))) modifier)))
+  (let ((new-freq (* (string->number (glgui-widget-get gui frequency-field 'label)) modifier)))
     (if (and (>= new-freq *min-frequency*) (<= new-freq *max-frequency*)) (set-frequency new-freq))))
 (define (decrease-octave parent widget event x y) (adjust-octave 0.5))
 (define (increase-octave parent widget event x y) (adjust-octave 2))
 ```
 
-The `glgui-inputlabel` has two callback parameters available: `'onfocuscb` and
-`'aftercharcb`. It would be nice to strip the "Hz" from the value on focus, so
-the user is left with just a number to edit. I created a new function similar
-to the `chop-units` helper function I created above, this time with an
-exclamation mark since this function has side effects (changing the contents of
-the text field).
-
-```scheme
-(define (chop-units! parent widget event x y)
-  (glgui-widget-set! parent widget 'label (chop-units (glgui-widget-get parent widget 'label))))
-```
-
-The `'aftercharcb` callback is called after each character is typed or deleted.
-We can use this to update the slider as a user enters a frequency. What if a
-user (and you know they will) enters a number higher than 20,000 or a letter?
-We need a function that will only allow numbers within a given range.
+The `'aftercharcb` callback of `glgui-inputlabel` is called after each
+character is typed or deleted. We can use this to update the slider as a user
+enters a frequency. What if a user (and you know they will) enters a number
+higher than 20,000 or a letter? We need a function that will only allow numbers
+within a given range.
 
 ```scheme
 ;; Only allow numbers within range of min-value and max-value
 (define (num-only min-value max-value old-value)
   (lambda (parent widget)
-    (let* ((current-value (chop-units (glgui-widget-get parent widget 'label)))
+    (let* ((current-value (glgui-widget-get parent widget 'label))
            (current-numified (string->number current-value)))
       (if (or (= (string-length current-value) 0) ; Allow field to be empty
               (and current-numified (>= current-numified min-value) (<= current-numified max-value)))
@@ -566,10 +543,9 @@ the last known value. Many programming languages today have closures, but
 Scheme practically invented them. A closure enables variables to be associated
 with a function that persist through all the calls of the function.
 
-Now we can wire the `glgui-inputlabel` callbacks up to these functions.
+Now we can wire the `glgui-inputlabel` callback up to these functions.
 
 ```scheme
-(glgui-widget-set! gui frequency-field 'onfocuscb chop-units!)
 (set! frequency-range (num-only *min-frequency* *max-frequency* (glgui-widget-get gui frequency-field 'label)))
 (glgui-widget-set! gui frequency-field 'aftercharcb (lambda (parent widget event x y)
   (frequency-range parent widget)
@@ -583,29 +559,17 @@ sure there are no high jinks going on with the value using the function created
 by the closure (`frequency-range`), we update the position of the slider using
 the current value of the text field.
 
-We can use the `chop-units!` helper function and `num-only` closure again to
-create a field to specify the duration of the beep in milliseconds:
+We can use the  `num-only` closure again to create a field to specify the
+duration of the beep in milliseconds:
 
 ```scheme
 ;; General Controls
 (glgui-label gui 20 40 80 30 "Duration" ascii_18.fnt *foreground-color*)
-(set! duration-field (glgui-inputlabel gui 110 40 120 30 "200 ms" ascii_18.fnt *text-color* *foreground-color*))
+(set! duration-field (glgui-inputlabel gui 110 40 80 30 "200" ascii_18.fnt *text-color* *foreground-color*))
 (glgui-widget-set! gui duration-field 'align GUI_ALIGNCENTER)
-(glgui-widget-set! gui duration-field 'onfocuscb chop-units!)
 (set! duration-range (num-only 1 600000 (glgui-widget-get gui duration-field 'label)))
 (glgui-widget-set! gui duration-field 'aftercharcb (lambda (parent widget event x y) (duration-range parent widget)))
-```
-
-And a little change to `chop-units`, so it will chop both "Hz" and "ms".
-
-```scheme
-;; Chop off units (Hz and ms) from value
-(define (chop-units text)
-  (let* ((text-length (string-length text))
-         ; Prevent negative position in string if text-length shorter than units
-         (text-pos (if (< (- text-length 3) 0) 0 (- text-length 3)))
-         (text-units (substring text text-pos text-length)))
-    (if (or (equal? text-units " Hz") (equal? text-units " ms")) (substring text 0 text-pos) text)))
+(glgui-label gui 195 40 40 30 "ms" ascii_18.fnt *foreground-color*)
 ```
 
 Frequency is rather abstract. Let's also give the user the ability to select a
@@ -700,10 +664,10 @@ the real-time audio subsystem.
 (define (generate-tone parent widget event x y)
   ; Make sure neither frequency or duration were left blank
   (if (= (string-length (glgui-widget-get parent frequency-field 'label)) 0) (set-frequency 1))
-  (if (= (string-length (glgui-widget-get parent duration-field 'label)) 0) (glgui-widget-set! parent duration-field 'label "1 ms"))
-  (rtaudio-frequency (exact->inexact (string->number (chop-units (glgui-widget-get parent frequency-field 'label)))))
+  (if (= (string-length (glgui-widget-get parent duration-field 'label)) 0) (glgui-widget-set! parent duration-field 'label "1"))
+  (rtaudio-frequency (exact->inexact (string->number (glgui-widget-get parent frequency-field 'label))))
   (rtaudio-start 44100 0.5)
-  (thread-sleep! (/ (string->number (chop-units (glgui-widget-get parent duration-field 'label))) 1000))
+  (thread-sleep! (/ (string->number (glgui-widget-get parent duration-field 'label)) 1000))
   (rtaudio-stop))
 ```
 
