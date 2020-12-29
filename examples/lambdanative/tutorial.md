@@ -310,8 +310,8 @@ script above the `(main)` loop that I could reference throughout the program.
 (define *min-position* 0)
 (define *max-position* 2000)
 ;; Range of frequencies
-(define *min-frequency* 1)
-(define *max-frequency* 19999)
+(define *min-frequency* 20)
+(define *max-frequency* 20000)
 ```
 
 The variable name `*background-color*` is just a Lisp naming convention for
