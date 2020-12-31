@@ -37,12 +37,10 @@
 (define frequency-scale (/ (- max-freq min-freq) (- *max-position* *min-position*)))
 ; Convert slider position to frequency
 (define (position->frequency position)
-  (inexact->exact (round
-    (exp (+ min-freq (* frequency-scale (- position *min-position*)))))))
+  (inexact->exact (round (exp (+ min-freq (* frequency-scale (- position *min-position*)))))))
 ; Convert frequency to slider position
 (define (frequency->position freq)
-  (inexact->exact (round
-    (/ (- (log freq) min-freq) (+ frequency-scale *min-position*)))))
+  (inexact->exact (round (/ (- (log freq) min-freq) (+ frequency-scale *min-position*)))))
 ; Set frequency slider and display
 (define (set-frequency freq)
   (send slider set-value (frequency->position freq))

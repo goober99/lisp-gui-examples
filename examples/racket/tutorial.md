@@ -75,12 +75,10 @@ JavaScript, but it was easy enough to port to Racket.
 (define frequency-scale (/ (- max-freq min-freq) (- *max-position* *min-position*)))
 ; Convert slider position to frequency
 (define (position->frequency position)
-  (inexact->exact (round
-    (exp (+ min-freq (* frequency-scale (- position *min-position*)))))))
+  (inexact->exact (round (exp (+ min-freq (* frequency-scale (- position *min-position*)))))))
 ; Convert frequency to slider position
 (define (frequency->position freq)
-  (inexact->exact (round
-    (/ (- (log freq) min-freq) (+ frequency-scale *min-position*)))))
+  (inexact->exact (round (/ (- (log freq) min-freq) (+ frequency-scale *min-position*)))))
 ```
 
 I added some global parameters to the top of the script. The variable name
@@ -93,7 +91,7 @@ with just the slider.
 Then we create two functions: one that takes the position on the slider and
 returns the frequency (`position->frequency`) and another that takes a
 frequency and returns the position on the slider (`frequency-position`). Now
-let's modify our `slider%` to use `frequency->position` to covert the
+let's modify our `slider%` to use `frequency->position` to convert the
 `init-value` to a slider position using our logarithmic scale.
 
 ```scheme
