@@ -10,9 +10,20 @@
 (def min-frequency 20)
 (def max-frequency 20000)
 
+; Notes -> frequency (middle A-G [A4-G4])
+; http://pages.mtu.edu/~suits/notefreqs.html
+(def notes {"A" 440.00
+            "B" 493.88
+            "C"261.63
+            "D" 293.66
+            "E" 329.63
+            "F" 349.23
+            "G" 292.00})
+
 ; Cljfx global state
 (def *state
-  (atom {:frequency 440}))
+  (atom {:frequency 440
+         :duration 200}))
 
 ; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
 ; Adapted from https://stackoverflow.com/questions/846221/logarithmic-slider
@@ -42,15 +53,21 @@
     (if (or (= input "") (number? numified))
         change
         nil)))
-(defn number-field [{:keys [min-value max-value init-value state-key]}]
-  {:fx/type :text-field
-   :text-formatter {:fx/type :text-formatter
-                    :value-converter :number
-                    :filter num-filter
-                    :value init-value
-                    :on-value-changed #(cond (< % min-value) (swap! *state assoc state-key min-value)
-                                             (> % max-value) (swap! *state assoc state-key max-value)
-                                             :else (swap! *state assoc state-key %))}})
+(defn number-field [{:keys [min-value max-value init-value state-key label]}]
+  {:fx/type :h-box
+   :alignment :center
+   :spacing 5
+   :children [{:fx/type :text-field
+               :pref-column-count (+ 1 (count (str max-value)))
+               :text-formatter {:fx/type :text-formatter
+               :value-converter :number
+               :filter num-filter
+               :value init-value
+               :on-value-changed #(cond (< % min-value) (swap! *state assoc state-key min-value)
+                                        (> % max-value) (swap! *state assoc state-key max-value)
+                                        :else (swap! *state assoc state-key %))}}
+              {:fx/type :label
+               :text label}]})
 
 ; Frequency slider and controls
 (defn frequency-slider [{:keys [frequency]}]
@@ -65,28 +82,46 @@
    :on-action (fn [_] (set-frequency (* frequency modifier)))})
 (defn frequency-controls [{:keys [frequency]}]
   {:fx/type :h-box
+   :alignment :center
+   :spacing 20
    :children [{:fx/type octave-button
                :frequency frequency
                :label "<"
                :modifier 0.5}
-              {:fx/type :h-box
-               :alignment :center
-               :spacing 5
-               :padding {:top 0 :bottom 0 :left 20 :right 20}
-               :children [{:fx/type number-field
-                           :min-value min-frequency
-                           :max-value max-frequency
-                           :init-value frequency
-                           :state-key :frequency}
-                          {:fx/type :label
-                           :text "Hz"}]}
+              {:fx/type number-field
+               :min-value min-frequency
+               :max-value max-frequency
+               :init-value frequency
+               :state-key :frequency
+               :label "Hz"}
               {:fx/type octave-button
                :frequency frequency
                :label ">"
                :modifier 2}]})
 
+; General controls
+(defn general-controls [{:keys [duration]}]
+  {:fx/type :h-box
+   :spacing 20
+   :children [{:fx/type number-field
+               :min-value 1
+               :max-value 600000 ; 10 minutes
+               :init-value duration
+               :state-key :duration
+               :label "ms"}
+              {:fx/type :button
+               :text "Play"}
+              {:fx/type :h-box
+               :alignment :center
+               :spacing 5
+               :children [{:fx/type :label
+                           :text "♪"}
+                          {:fx/type :choice-box
+                           :items ["A" "B" "C" "D" "E" "F" "G"]
+                           :on-value-changed #(set-frequency (notes %))}]}]})
+
 ; Main window
-(defn root [{:keys [frequency]}]
+(defn root [{:keys [frequency duration]}]
   {:fx/type :stage
    :showing true
    :title "Bleep"
@@ -97,7 +132,9 @@
                   :children [{:fx/type frequency-slider
                               :frequency frequency}
                              {:fx/type frequency-controls
-                              :frequency frequency}]}}})
+                              :frequency frequency}
+                             {:fx/type general-controls
+                              :duration duration}]}}})
 
 ; Renderer with middleware that maps incoming data to component description
 (def renderer
