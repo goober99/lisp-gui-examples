@@ -28,21 +28,29 @@
   (int (Math/round (/ (- (Math/log freq) min-freq) (+ frequency-scale min-position)))))
 ; Update frequency in global state if it's a valid frequency
 (defn set-frequency [freq]
-  (cond
-    ; If left blank or lower than allowed, use minimum.
-    ; This is to allow users to delete everything.
-    (or (not freq) (< freq min-frequency))
-      (swap! *state assoc :frequency min-frequency)
-    ; Otherwise, use value as passed.
-    (and (>= freq min-frequency) (<= freq max-frequency))
-      (swap! *state assoc :frequency freq)))
-; Test if value falls below upper limit of frequency.
-; Below lower limit allowed so users can backspace.
-(defn valid-freq? [input]
-  (and (number? input) (<= input max-frequency)))
+  (when (and (>= freq min-frequency) (<= freq max-frequency))
+    (swap! *state assoc :frequency freq)))
 
 ; Compose the UI map to be rendered by JavaFX
 ; Splitting it up makes it more readable since lines don't nest as deeply.
+
+; Text field limited to entering numbers within range that updates specified
+; key in global state atom (state-key)
+(defn num-filter [change]
+  (let [input (.getControlNewText change)
+        numified (read-string input)]
+    (if (or (= input "") (number? numified))
+        change
+        nil)))
+(defn number-field [{:keys [min-value max-value init-value state-key]}]
+  {:fx/type :text-field
+   :text-formatter {:fx/type :text-formatter
+                    :value-converter :number
+                    :filter num-filter
+                    :value init-value
+                    :on-value-changed #(cond (< % min-value) (swap! *state assoc state-key min-value)
+                                             (> % max-value) (swap! *state assoc state-key max-value)
+                                             :else (swap! *state assoc state-key %))}})
 
 ; Frequency slider and controls
 (defn frequency-slider [{:keys [frequency]}]
@@ -57,23 +65,25 @@
    :on-action (fn [_] (set-frequency (* frequency modifier)))})
 (defn frequency-controls [{:keys [frequency]}]
   {:fx/type :h-box
-   :children [(octave-button {:frequency frequency :label "<" :modifier 0.5})
+   :children [{:fx/type octave-button
+               :frequency frequency
+               :label "<"
+               :modifier 0.5}
               {:fx/type :h-box
                :alignment :center
                :spacing 5
                :padding {:top 0 :bottom 0 :left 20 :right 20}
-               :children [{:fx/type :text-field
-                           :text-formatter {:fx/type :text-formatter
-                                            :value-converter :number
-                                            :filter #(let [input (.getControlNewText %)]
-                                              (if (or (= input "") (valid-freq? (read-string input)))
-                                                %
-                                                nil))
-                                            :value frequency
-                                            :on-value-changed #(set-frequency %)}}
+               :children [{:fx/type number-field
+                           :min-value min-frequency
+                           :max-value max-frequency
+                           :init-value frequency
+                           :state-key :frequency}
                           {:fx/type :label
                            :text "Hz"}]}
-              (octave-button {:frequency frequency :label ">" :modifier 2})]})
+              {:fx/type octave-button
+               :frequency frequency
+               :label ">"
+               :modifier 2}]})
 
 ; Main window
 (defn root [{:keys [frequency]}]
@@ -84,8 +94,10 @@
            :root {:fx/type :v-box
                   :padding 25
                   :spacing 40
-                  :children [(frequency-slider {:frequency frequency})
-                             (frequency-controls {:frequency frequency})]}}})
+                  :children [{:fx/type frequency-slider
+                              :frequency frequency}
+                             {:fx/type frequency-controls
+                              :frequency frequency}]}}})
 
 ; Renderer with middleware that maps incoming data to component description
 (def renderer
