@@ -1,7 +1,9 @@
 (ns bleep.core
   (:gen-class)
   (:require [cljfx.api :as fx])
-  (:import [javafx.application Platform]))
+  (:import [javafx.application Platform]
+           [com.jsyn JSyn]
+           [com.jsyn.unitgen LineOut SineOscillator]))
 
 ; Scale used by slider
 (def min-position 0)
@@ -24,6 +26,21 @@
 (def *state
   (atom {:frequency 440
          :duration 200}))
+
+; Generate a tone using JSyn
+; Adapted from https://github.com/daveyarwood/javasynth/blob/master/src/javasynth/getting_started.clj
+(defn generate-tone [frequency duration amplitude]
+  (let [synth (doto (. JSyn createSynthesizer) .start)
+        out (LineOut.)
+        sine (SineOscillator. frequency)]
+    (.set (. sine -amplitude) amplitude)
+    (.add synth out)
+    (.add synth sine)
+    (.connect (. sine -output) (. out -input))
+    (let [now (. synth getCurrentTime)]
+      (.start out)
+      (. synth (sleepUntil (+ now (/ duration 1000))))
+      (.stop synth))))
 
 ; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
 ; Adapted from https://stackoverflow.com/questions/846221/logarithmic-slider
@@ -100,7 +117,7 @@
                :modifier 2}]})
 
 ; General controls
-(defn general-controls [{:keys [duration]}]
+(defn general-controls [{:keys [frequency duration]}]
   {:fx/type :h-box
    :spacing 20
    :children [{:fx/type number-field
@@ -110,7 +127,8 @@
                :state-key :duration
                :label "ms"}
               {:fx/type :button
-               :text "Play"}
+               :text "Play"
+               :on-action (fn [_] (generate-tone frequency duration 0.5))}
               {:fx/type :h-box
                :alignment :center
                :spacing 5
@@ -134,6 +152,7 @@
                              {:fx/type frequency-controls
                               :frequency frequency}
                              {:fx/type general-controls
+                              :frequency frequency
                               :duration duration}]}}})
 
 ; Renderer with middleware that maps incoming data to component description
