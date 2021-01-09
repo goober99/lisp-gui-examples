@@ -15,7 +15,22 @@ git clone https://github.com/goober99/lisp-gui-examples.git
 cd lisp-gui-examples/examples
 ```
 
-### LambdaNative
+### Cljfx (Clojure/JavaFX)
+
+![Screenshot](screenshots/cljfx.png?raw=true "Cljfx screenshot")
+
+Clojure and Leiningen are available in the repository of most Linux distros.
+Install them from your distro's repo.
+
+Navigate to the `cljfx` example subdirectory and run the project with
+Leiningen.
+
+```bash
+cd cljfx
+lein run
+```
+
+### LambdaNative (Gambit Scheme)
 
 ![Screenshot](screenshots/lambdanative.png?raw=true "LambdaNative screenshot")
 

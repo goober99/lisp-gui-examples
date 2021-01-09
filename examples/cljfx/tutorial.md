@@ -4,7 +4,7 @@ but Cljfx provides a declarative and functional wrapper for JavaFX. Instead of
 building yet another calculator, we're going to use Cljfx to build a GUI for
 generating a tone.
 
-![Screenshot](../../screenshots/racket.png?raw=true "Example screenshot")
+![Screenshot](../../screenshots/cljfx.png?raw=true "Example screenshot")
 
 You'll need Clojure installed. We also need a way to pull the Cljfx dependency
 into our app. It seems [deps.edn](https://clojure.org/guides/deps_and_cli)
@@ -39,7 +39,8 @@ needed to create a window with Cljfx.
 ```clojure
 (defproject bleep "0.1.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.10.0"]
-                 [cljfx "1.7.12"]]
+                 [cljfx "1.7.12"]
+                 [com.jsyn/jsyn "20170815"]]
   :main bleep.core)
 ```
 
@@ -48,7 +49,9 @@ needed to create a window with Cljfx.
 (ns bleep.core
   (:gen-class)
   (:require [cljfx.api :as fx])
-  (:import [javafx.application Platform]))
+  (:import [javafx.application Platform]
+           [com.jsyn JSyn]
+           [com.jsyn.unitgen LineOut SineOscillator]))
 
 (defn hello-world [& args]
   {:fx/type :label
@@ -84,6 +87,7 @@ Begin the file with a namespace declaration. The namespace should have a
 we'll be using Cljfx to create our GUI, we need to `require` it. We'll mostly
 be using JavaFX via Cljfx, but you can also access JavaFX classes directly.
 Let's `import` (a way to get Java code into Clojure) the JavaFX Platform class.
+We'll also import the Java JSyn library for use later in generating the tone.
 
 Leiningen needs a `-main` function (note the leading dash is part of the
 function name). This is the function that will get called when you run your app
@@ -365,16 +369,16 @@ not.
 A caveat here is that the value of `:filter` [must
 be](https://github.com/cljfx/cljfx/issues/114#issuecomment-754642403) a
 top-level️ function. I wish I could define `:filter` as an anonymous function.
-This would allow me to do something like also preventiing the user from even
+This would allow me to do something like also preventing the user from even
 entering a number higher than the allowed range rather than just reverting to
 the maximum value once the value is committed.
 
 ```clojure
-: filter #(let [input (.getControlNewText %])
-                numified (read-string input)]
-            (if (or (= input "") (and (number? numified) (<= max-value)))
-                %
-                nil))
+:filter #(let [input (.getControlNewText %])
+               numified (read-string input)]
+           (if (or (= input "") (and (number? numified) (<= max-value)))
+               %
+               nil))
 ```
 
 If you try the above, it will throw a `Replace forbidden` error. That's because
@@ -419,7 +423,7 @@ track duration:
 Then create our duration field:
 
 ```clojure
-(defn general-controls [{:keys [duration]}]
+(defn general-controls [{:keys [frequency duration]}]
   {:fx/type :h-box
    :spacing 20
    :children [{:fx/type number-field
@@ -428,6 +432,18 @@ Then create our duration field:
                :init-value duration
                :state-key :duration
                :label "ms"}]})
+```
+
+Add this to the `:children` vector of the `:v-box` in the `root` map:
+
+```clojure
+[{:fx/type frequency-slider
+  :frequency frequency}
+ {:fx/type frequency-controls
+  :frequency frequency}
+ {:fx/type general-controls
+  :frequency frequency
+  :duration duration}]
 ```
 
 Frequency is rather abstract. Let's also give the user the ability to select a
@@ -450,7 +466,7 @@ drop-down menu, we'll look up the frequency in the map and set that frequency
 in the global state atom. We'll add it on to `general-controls`:
 
 ```clojure
-(defn general-controls [{:keys [duration]}]
+(defn general-controls [{:keys [frequency duration]}]
   {:fx/type :h-box
    :spacing 20
    :children [{:fx/type number-field
@@ -470,3 +486,56 @@ in the global state atom. We'll add it on to `general-controls`:
 ```
 
 Finally, let's make some noise.
+
+```scheme
+; Generate a tone using JSyn
+; Adapted from https://github.com/daveyarwood/javasynth/blob/master/src/javasynth/getting_started.clj
+(defn generate-tone [frequency duration amplitude]
+  (let [synth (doto (. JSyn createSynthesizer) .start)
+        out (LineOut.)
+        sine (SineOscillator. frequency)]
+    (.set (. sine -amplitude) amplitude)
+    (.add synth out)
+    (.add synth sine)
+    (.connect (. sine -output) (. out -input))
+    (let [now (. synth getCurrentTime)]
+      (.start out)
+      (. synth (sleepUntil (+ now (/ duration 1000))))
+      (.stop synth))))
+```
+
+We'll use the Java [JSyn library](http://softsynth.com/jsyn/index.php) we
+imported at the very beginning to generate the tone. Leiningen will pull in
+this dependency alongside Cljfx. Java has a standard [Sound
+API](https://openjdk.java.net/groups/sound/) that could be used to generate a
+sine tone without any external dependencies, but it's a little too low-level
+for what I'm trying to accomplish with this tutorial. This is a tutorial about
+building a GUI with Clojure and not about sound processing with Clojure. If
+you're interested, I did find a [well-written
+tutorial](https://brainshave.com/blog/sound-synthesis/) about using Clojure's
+Java interop to generate a sine tone with Clojure via the Java Sound API. Wire
+this function up to a button between the duration and note selector, and you're
+ready to make some noise.
+
+```scheme
+(defn general-controls [{:keys [frequency duration]}]
+  {:fx/type :h-box
+   :spacing 20
+   :children [{:fx/type number-field
+               :min-value 1
+               :max-value 600000 ; 10 minutes
+               :init-value duration
+               :state-key :duration
+               :label "ms"}
+              {:fx/type :button
+               :text "Play"
+               :on-action (fn [_] (generate-tone frequency duration 0.5))}
+              {:fx/type :h-box
+               :alignment :center
+               :spacing 5
+               :children [{:fx/type :label
+                           :text "♪"}
+                          {:fx/type :choice-box
+                           :items ["A" "B" "C" "D" "E" "F" "G"]
+                           :on-value-changed #(set-frequency (notes %))}]}]})
+```
