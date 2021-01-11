@@ -77,12 +77,12 @@
    :children [{:fx/type :text-field
                :pref-column-count (+ 1 (count (str max-value)))
                :text-formatter {:fx/type :text-formatter
-               :value-converter :number
-               :filter num-filter
-               :value init-value
-               :on-value-changed #(cond (< % min-value) (swap! *state assoc state-key min-value)
-                                        (> % max-value) (swap! *state assoc state-key max-value)
-                                        :else (swap! *state assoc state-key %))}}
+                                :value-converter :number
+                                :filter num-filter
+                                :value init-value
+                                :on-value-changed #(cond (< % min-value) (swap! *state assoc state-key min-value)
+                                                         (> % max-value) (swap! *state assoc state-key max-value)
+                                                         :else (swap! *state assoc state-key %))}}
               {:fx/type :label
                :text label}]})
 
