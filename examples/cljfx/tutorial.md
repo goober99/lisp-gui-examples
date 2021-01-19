@@ -291,7 +291,7 @@ It might be helpful to have a couple buttons to increase or decrease the
 frequency by an octave. An [octave](https://en.wikipedia.org/wiki/Octave) is
 "the interval between one musical pitch and another with double its frequency."
 
-```scheme
+```clojure
 (defn octave-button [{:keys [frequency label modifier]}]
   {:fx/type :button
    :text label
@@ -333,7 +333,7 @@ loses focus or the user hits Enter. The filter should be a function that
 accepts a Java `TextFormatter.Change` object and either returns that object or
 returns null (`nil` in Clojurese) to reject the change.
 
-```scheme
+```clojure
 ; Text field limited to entering numbers within range that updates specified
 ; key in global state atom (state-key)
 (defn num-filter [change]
@@ -350,12 +350,12 @@ returns null (`nil` in Clojurese) to reject the change.
    :children [{:fx/type :text-field
                :pref-column-count (+ 1 (count (str max-value)))
                :text-formatter {:fx/type :text-formatter
-               :value-converter :number
-               :filter num-filter
-               :value init-value
-               :on-value-changed #(cond (< % min-value) (swap! *state assoc state-key min-value)
-                                        (> % max-value) (swap! *state assoc state-key max-value)
-                                        :else (swap! *state assoc state-key %))}}
+                                :value-converter :number
+                                :filter num-filter
+                                :value init-value
+                                :on-value-changed #(cond (< % min-value) (swap! *state assoc state-key min-value)
+                                                         (> % max-value) (swap! *state assoc state-key max-value)
+                                                         :else (swap! *state assoc state-key %))}}
               {:fx/type :label
                :text label}]})
 ```
@@ -487,7 +487,7 @@ in the global state atom. We'll add it on to `general-controls`:
 
 Finally, let's make some noise.
 
-```scheme
+```clojure
 ; Generate a tone using JSyn
 ; Adapted from https://github.com/daveyarwood/javasynth/blob/master/src/javasynth/getting_started.clj
 (defn generate-tone [frequency duration amplitude]
@@ -517,7 +517,7 @@ Java interop to generate a sine tone with Clojure via the Java Sound API. Wire
 this function up to a button between the duration and note selector, and you're
 ready to make some noise.
 
-```scheme
+```clojure
 (defn general-controls [{:keys [frequency duration]}]
   {:fx/type :h-box
    :spacing 20
