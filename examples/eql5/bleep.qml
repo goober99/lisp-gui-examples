@@ -3,11 +3,19 @@ import QtQuick.Controls 2.0
 import QtQuick.Layouts 1.2
 
 ColumnLayout {
+  id: root
+
+  function setFrequency(freq) {
+    frequencySlider.value = freq
+    frequencyField.value = freq
+  }
+
   Slider {
     id: frequencySlider
     from: 20
     value: 440
     to: 20000
+    onValueChanged: setFrequency(value)
     Layout.fillWidth: true
     Layout.margins: 25
   }
@@ -23,9 +31,10 @@ ColumnLayout {
     SpinBox {
       id: frequencyField
       from: 20
-      value: frequencySlider.value
+      value: 440
       to: 20000
       editable: true
+      onValueChanged: setFrequency(value)
     }
     Button {
       text: ">"
