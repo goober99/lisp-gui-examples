@@ -10,9 +10,9 @@ The examples are housed in the `examples` subdirectory. Each example has its
 own subdirectory. To run the examples, clone this repo and navigate to the
 `examples` subdirectory.
 
-```bash
-git clone https://github.com/goober99/lisp-gui-examples.git
-cd lisp-gui-examples/examples
+```console
+$ git clone https://github.com/goober99/lisp-gui-examples.git
+$ cd lisp-gui-examples/examples
 ```
 
 ### Cljfx (Clojure/JavaFX)
@@ -25,9 +25,9 @@ Install them from your distro's repo.
 Navigate to the `cljfx` example subdirectory and run the project with
 Leiningen.
 
-```bash
-cd cljfx
-lein run
+```console
+$ cd cljfx
+$ lein run
 ```
 
 ### LambdaNative (Gambit Scheme)
@@ -37,9 +37,9 @@ lein run
 Navigate to the `lambdanative` example subdirectory and execute the `bleep`
 executable.
 
-```bash
-cd lambdanative
-./bleep
+```console
+$ cd lambdanative
+$ ./bleep
 ```
 
 To build the example from source, see the README in the `lambdanative` example
@@ -56,10 +56,10 @@ You can install it with the `raco` utility that comes with Racket.
 Navigate to the `racket` example subdirectory and execute bleep.rkt with
 Racket.
 
-```bash
-raco pkg install rsound
-cd racket
-racket bleep.rkt
+```console
+$ raco pkg install rsound
+$ cd racket
+$ racket bleep.rkt
 ```
 
 ## Supported Platforms

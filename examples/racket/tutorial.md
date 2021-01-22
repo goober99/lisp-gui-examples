@@ -8,7 +8,7 @@ You'll need Racket installed, of course. It's available in the repositories of
 most Linux distros, so just install it from your distro's repo. Then you're
 ready to begin.
 
-```scheme
+```racket
 #lang racket
 
 (require racket/gui)
@@ -17,7 +17,7 @@ ready to begin.
 One of the strengths of Racket is the number of built-in libraries. We'll be
 using the racket/gui library.
 
-```scheme
+```racket
 ; Main window
 (define frame (new frame% [label "Bleep"]))
 
@@ -30,7 +30,7 @@ the `frame%` class. Identifiers ending with a percent is Racket's naming
 convention for classes. You show the window by calling its `show` method. Now
 let's add some additional widgets between creating the window and showing it.
 
-```scheme
+```racket
 (define slider (new slider% [label #f]
                             [min-value 20]
                             [max-value 20000]
@@ -59,7 +59,7 @@ answer](https://stackoverflow.com/questions/846221/logarithmic-slider/846249#846
 on how to map a slider to a logarithmic scale. The code given in the answer is
 JavaScript, but it was easy enough to port to Racket.
 
-```scheme
+```racket
 ; Scale used by slider
 (define *min-position* 0)
 (define *max-position* 2000)
@@ -94,7 +94,7 @@ frequency and returns the position on the slider (`frequency-position`). Now
 let's modify our `slider%` to use `frequency->position` to convert the
 `init-value` to a slider position using our logarithmic scale.
 
-```scheme
+```racket
 (define slider (new slider% [label #f]
                             [min-value *min-position*]
                             [max-value *max-position*]
@@ -108,7 +108,7 @@ let's modify our `slider%` to use `frequency->position` to convert the
 Underneath the slider is a text field showing the current frequency and buttons
 to increase/decrease the frequency by one octave.
 
-```scheme
+```racket
 (define frequency-pane (new horizontal-pane% [parent frame]
                                              [border 10]
                                              [alignment '(center center)]))
@@ -131,7 +131,7 @@ widget classes accept a `callback` parameter that wires the widget up to a
 function. If we add a callback function to the slider, that function will be
 called each time the slider is moved.
 
-```scheme
+```racket
 ; Link slider to text field display of frequency
 (define (adjust-frequency widget event)
   (send frequency-field set-value
@@ -148,7 +148,7 @@ expects a string, so we have to convert the number returned by
 `position->frequency` to a string with `~a`. Next all there is to do is wire
 these functions up to the widgets:
 
-```scheme
+```racket
 (define slider (new slider% [label #f]
                             ...
                             [callback adjust-frequency]
@@ -164,7 +164,7 @@ Wire the buttons up to callback functions called `decrease-octave` and
 `increase-octave`. An [octave](https://en.wikipedia.org/wiki/Octave) is "the
 interval between one musical pitch and another with double its frequency."
 
-```scheme
+```racket
 ; Set frequency slider and display
 (define (set-frequency freq)
   (send slider set-value (frequency->position freq))
@@ -188,7 +188,7 @@ classes of the built-in widgets to create custom widgets. Let's extend the
 two additional init variables that specify a `min-value` and `max-value` and
 only allow numbers that fall within that range.
 
-```scheme
+```racket
 ; Extend the text-field% class to validate data when field loses focus. Field
 ; should contain only numbers within allowed range. Otherwise, set to min.
 (define number-field%
@@ -211,7 +211,7 @@ only allow numbers that fall within that range.
 
 Then we can replace our `text-field%` with a `number-field%`.
 
-```scheme
+```racket
 (define frequency-field (new number-field% [label #f]
                                            [parent frequency-pane]
                                            [min-value *min-frequency*]
@@ -225,7 +225,7 @@ Then we can replace our `text-field%` with a `number-field%`.
 Let's use this `number-field%` again to create a field to specify the duration
 of the beep in milliseconds:
 
-```scheme
+```racket
 (define control-pane (new horizontal-pane% [parent frame]
                                            [border 25]
                                            [spacing 25]))
@@ -242,7 +242,7 @@ Frequency is rather abstract. Let's also give the user the ability to select a
 musical note. We can store the corresponding frequencies for A4-G4 in a hash
 table.
 
-```scheme
+```racket
 ; Notes -> frequency (middle A-G [A4-G4])
 ; http://pages.mtu.edu/~suits/notefreqs.html
 (define notes (hash "A" 440.00
@@ -258,7 +258,7 @@ We'll give the user a drop-down menu. Whenever a note is selected from the
 drop-down menu, we'll look up the frequency in the hash table and set it using
 the `set-frequency` helper function we created for the octave buttons.
 
-```scheme
+```racket
 ; Set frequency to specific note
 (define (set-note choice event)
   (set-frequency (hash-ref notes (send choice get-string-selection))))
@@ -270,7 +270,7 @@ the `set-frequency` helper function we created for the octave buttons.
 
 Finally, let's make some noise.
 
-```scheme
+```racket
 (require rsound)
 
 ; Generate a tone using RSound
@@ -289,7 +289,7 @@ can install it with the `raco` utility that comes with Racket (`raco pkg
 install rsound`). Wire this up to a button between the duration and note
 selector, and you're ready to make some noise.
 
-```scheme
+```racket
 (define play-button (new button% [parent control-pane]
                                  [label "Play"]
                                  [callback generate-tone]))

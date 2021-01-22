@@ -27,25 +27,25 @@ terminal to install all the needed dependencies on Ubuntu.
 
 * Unzip the release to a system-wide location such as `/opt` or `/usr/local`.
 
-```bash
-sudo unzip lambdanative-*.zip -d /opt
+```console
+$ sudo unzip lambdanative-*.zip -d /opt
 ```
 
 * Rename unzipped directory.
 
-```bash
-cd /opt
-sudo mv lambdanative* lambdanative
+```console
+$ cd /opt
+$ sudo mv lambdanative* lambdanative
 ```
 
 * Create the files `SETUP` and `PROFILE`. If you were developing a mobile app,
 you would need to configure these files for the respective SDKs. Since that is
 outside the scope of this tutorial, that is left as an exercise for the reader.
 
-```bash
-cd lambdanative
-sudo cp SETUP.template SETUP
-sudo cp PROFILE.template PROFILE
+```console
+$ cd lambdanative
+$ sudo cp SETUP.template SETUP
+$ sudo cp PROFILE.template PROFILE
 ```
 
 * Edit `scripts/lambdanative` and populate the `LAMBDANATIVE` variable with
@@ -57,16 +57,16 @@ LAMBDANATIVE=/opt/lambdanative
 
 * Place the LambdaNative initialization script in the system path.
 
-```bash
-sudo ln -s /opt/lambdanative/scripts/lambdanative /usr/bin/lambdanative
+```console
+$ sudo ln -s /opt/lambdanative/scripts/lambdanative /usr/bin/lambdanative
 ```
 
 * Create and initialize a LambdaNative build directory.
 
-```bash
-mkdir ~/lambdanative
-cd ~/lambdanative
-lambdanative init
+```console
+$ mkdir ~/lambdanative
+$ cd ~/lambdanative
+$ lambdanative init
 ```
 
 ## Creating a New GUI App
@@ -82,15 +82,15 @@ Makefile
 
 Your app will go in its own subdirectory in `apps`. To create a new app:
 
-```bash
-lambdanative create <appname> <apptype>
+```console
+$ lambdanative create <appname> <apptype>
 ```
 
 The options for `<apptype>` are `console`, `gui`, and `eventloop`. I created a
 new GUI app called bleep:
 
-```bash
-lambdanative create bleep gui
+```console
+$ lambdanative create bleep gui
 ```
 
 This will create a directory in `apps` called `bleep` with several files in it.
@@ -99,10 +99,10 @@ This will create a directory in `apps` called `bleep` with several files in it.
 
 LambdaNative utilizes the GNU Build System.
 
-```bash
-./configure bleep
-make
-make install
+```console
+$ ./configure bleep
+$ make
+$ make install
 ```
 
 By default, the build will target the local host. The first time you do this
@@ -115,11 +115,11 @@ You can also configure in debug mode. You will want to clean the cache with
 `make scrub` so everything is rebuilt. It will take awhile since everything is
 being rebuilt.
 
-```bash
-./configure bleep debug
-make scrub
-make
-make install
+```console
+$ ./configure bleep debug
+$ make scrub
+$ make
+$ make install
 ```
 
 In my experience, debug mode didn't help much. Runtime errors are logged to
@@ -167,7 +167,7 @@ The development workflow is more akin to traditional compiled languages like C.
 I missed the quick feedback I'm used to while developing Scheme on a REPL.
 After the initial compile, subsequent compiles are much quicker.
 
-```bash
+```console
 $ time make
 
 real  0m3.877s
@@ -194,9 +194,9 @@ If your interface will use text (such as labels on buttons), you must include a
 `FONTS` file in your application subdirectory. I just copied the `FONTS` file
 from one of the demos included with LambdaNative.
 
-```bash
-cd apps/bleep
-cp /opt/lambdanative/apps/LineDrop/FONTS .
+```console
+$ cd apps/bleep
+$ cp /opt/lambdanative/apps/LineDrop/FONTS .
 ```
 
 This is what the file looks like:

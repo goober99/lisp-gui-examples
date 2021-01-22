@@ -4,6 +4,12 @@ with `ecl` and importing the bindings, you compile a new interpreter (`eql5`)
 that combines both ECL and Qt5 bindings. Instead of building yet another
 calculator, let's build a GUI for generating a tone.
 
+There are ports of EQL5 to Android and iOS, and a work-in-progress port to
+Sailfish OS, so EQL5 can also be used to develop mobile apps. The "Embedded"
+part of the name (of both ECL and EQL5) refers to the fact that it can be
+embedded in existing C++ projects. For this tutorial, we'll be building a
+standalone desktop app.
+
 ![Screenshot](../../screenshots/lambdanative.png?raw=true "Example screenshot")
 
 ## Compiling EQL5
@@ -15,15 +21,15 @@ Don't worry. It's not as scary as it sounds.
 * Clone the EQL5 Git repo. EQL5 doesn't appear to have releases or tags, so I
 guess you just clone `master` and hope that it's in a workable state.
 
-```bash
-git clone https://gitlab.com/eql/EQL5.git
+```console
+$ git clone https://gitlab.com/eql/EQL5.git
 ```
 
 * Install dependencies. This was actually the hardest part. Not the installing.
 That's just `apt install whatever` (or the package manager of your preferred
 distro). There are hundreds of Qt packages on Debian, and it's not always clear
 what Qt module corresponds to what Debian package (here's a
-[https://askubuntu.com/a/577334](list) I found useful). If I got an unknown
+[list](https://askubuntu.com/a/577334) I found useful). If I got an unknown
 module error during the `make` step, I would look the Qt module up in the list
 on Ask Ubuntu and install the corresponding dev package. I ended up needing to
 install libqt5svg5-dev, qml-module-qtquick2, qtbase5-dev, qtdeclarative5-dev,
@@ -36,19 +42,20 @@ qml-module-qtquick-window2. The other dependency you'll need is ECL, and I also
 recommend installing `qml` (it is helpful if building your GUI with QML). You
 can install all the dependencies needed on Debian/Ubuntu with:
 
-```bash
-sudo apt install ecl libqt5svg5-dev qml-module-qtquick2 qtbase5-dev qtdeclarative5-dev qtmultimedia5-dev qttools5-dev qtwebengine5-dev qml-module-qtquick-controls2 qml-module-qtquick-layouts qml-module-qtquick-window2 qml
+```console
+$ sudo apt install ecl libqt5svg5-dev qml-module-qtquick2 qtbase5-dev qtdeclarative5-dev qtmultimedia5-dev qttools5-dev qtwebengine5-dev qml-module-qtquick-controls2 qml-module-qtquick-layouts qml-module-qtquick-window2 qml
 ```
 
 * Navigate into the `src` subdirectory of the cloned EQL5 Git repo, compile,
-and install.
+and install. The `-qt5` flag was necessary on Debian, because `qmake` is a
+symlink to `qtchooser`. On other distros, this flag may not be required.
 
-```bash
-cd EQL5/src
-ecl -shell make
-qmake -qt5 eql5.pro
-make
-sudo make install
+```console
+$ cd EQL5/src
+$ ecl -shell make
+$ qmake -qt5 eql5.pro
+$ make
+$ sudo make install
 ```
 
 * Now `eql5` should be available to run. Verify it with `eql5 -qgui`, which
@@ -77,6 +84,10 @@ native on the desktop). It also has a smaller set of available widgets. Native
 look and feel is not important to me, and Qt Quick has plenty of widgets to
 implement the example in this tutorial. Given a choice between defining a GUI
 procedurally and declaratively, I'm going to choose the declarative option.
+
+The syntax of QML looks like a cross between JSON and CSS. Objects are
+specified followed by a pair of braces. Properties of the object are specified
+with key-value colon-separated pairs.
 
 ## Coding the App
 

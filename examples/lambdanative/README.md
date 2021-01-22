@@ -6,8 +6,8 @@
 
 * Then from your LambdaNative root directory
 
-```bash
-./configure bleep
-make
-make install
+```console
+$ ./configure bleep
+$ make
+$ make install
 ```
