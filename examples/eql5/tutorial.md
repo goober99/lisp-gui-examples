@@ -54,124 +54,29 @@ sudo make install
 * Now `eql5` should be available to run. Verify it with `eql5 -qgui`, which
 will launch a GUI REPL.
 
-## Creating a New GUI App
+## Building the GUI with QML
 
-Your freshly initiated build directory will look like this:
+EQL5 supports both Qt Widgets and Qt Quick. They primarily differ in how you
+define your UI. With Qt Widgets, you declare it procedurally.  With Qt Quick,
+you use a declarative language called QML to define your UI. The underlying
+implementation of the widgets also differ. Qt Widgets has been around a lot
+longer and has a broader range of available widgets, but many of these widgets
+are more desktop-oriented without touch components and not easily adapted for
+touch. Qt Quick, on the other hand, has been developed from the beginning to
+work well on touch screens (tablets, smartphones, etc.).
 
-```
-apps/
-modules/
-configure
-Makefile
-```
+Qt is essentially maintaining two sets of widgets. It would make more sense to
+me if QML was just an alternative way of specifying which widgets to use
+instead of a completely new set of widgets, but I'm not a Qt maintainer or even
+a C++ developer. I guess creating new widgets was easier than adapting the old
+widgets to be touch friendly.
 
-Your app will go in its own subdirectory in `apps`. To create a new app:
-
-```bash
-lambdanative create <appname> <apptype>
-```
-
-The options for `<apptype>` are `console`, `gui`, and `eventloop`. I created a
-new GUI app called bleep:
-
-```bash
-lambdanative create bleep gui
-```
-
-This will create a directory in `apps` called `bleep` with several files in it.
-
-## Compiling the App
-
-LambdaNative utilizes the GNU Build System.
-
-```bash
-./configure bleep
-make
-make install
-```
-
-By default, the build will target the local host. The first time you do this
-will take awhile, because it is downloading and compiling prerequisites. These
-prerequisites are cached to speed up subsequent compiles. If you get any errors
-during the initial build, you probably missed installing a dependency. Install
-it with your distro's package manager and then try compiling again.
-
-You can also configure in debug mode. You will want to clean the cache with
-`make scrub` so everything is rebuilt. It will take awhile since everything is
-being rebuilt.
-
-```bash
-./configure bleep debug
-make scrub
-make
-make install
-```
-
-In my experience, debug mode didn't help much. Runtime errors are logged to
-`~/Desktop/log/*.txt`.
-
-```
-[SYSTEM] 2019-03-16 00:59:21: Application bleep built 2019-03-16 00:59:14
-[SYSTEM] 2019-03-16 00:59:21: Git hash
-[ERROR] 2019-03-16 00:59:22: primordial: (assoc 49 #f): (Argument 2) LIST expected
-[ERROR] 2019-03-16 00:59:22: HALT
-```
-
-Not very helpful, is it? So I enabled debug mode.
-
-```
-[SYSTEM] 2019-03-16 01:16:44: Application bleep built 2019-03-16 01:16:34
-[SYSTEM] 2019-03-16 01:16:44: Git hash
-[ERROR] 2019-03-16 01:16:44: primordial: (assoc 49 #f): (Argument 2) LIST expected
-[ERROR] 2019-03-16 01:16:44: trace: /opt/lambdanative/modules/ln_glgui/primitives.scm line=230 col=21
-[ERROR] 2019-03-16 01:16:44: trace: /opt/lambdanative/modules/ln_glgui/primitives.scm line=273 col=21
-[ERROR] 2019-03-16 01:16:44: trace: /opt/lambdanative/modules/ln_glgui/slider.scm line=80 col=8
-[ERROR] 2019-03-16 01:16:44: trace: /opt/lambdanative/modules/ln_glgui/glgui.scm line=151 col=36
-[ERROR] 2019-03-16 01:16:44: trace: /opt/lambdanative/modules/ln_glgui/glgui.scm line=145 col=11
-[ERROR] 2019-03-16 01:16:44: trace: /opt/lambdanative/modules/ln_glgui/glgui.scm line=183 col=3
-[ERROR] 2019-03-16 01:16:44: trace: /opt/lambdanative/modules/eventloop/eventloop.scm line=151 col=9
-[ERROR] 2019-03-16 01:16:44: HALT
-```
-
-It's definitely longer but still not very helpful. It actually includes line
-numbers, which appears promising, but they are all line numbers in LambdaNative
-modules. It doesn't actually trace the error all the way to the line in my app
-causing the error. I spent a lot more time reading the source of the
-LambdaNative modules than I would have liked.
-
-And that's when the log file even contained an error. Sometimes the app failed
-with a segmentation fault and there was no error in the log at all. I often
-peppered my source with `(log-status "reached here")` and `tail -f` the log
-file to debug and isolate errors.
-
-Errors caught at compile time, on the other hand, were much nicer. If an error
-occurred while compiling, the error message included the line number from my
-app.
-
-The development workflow is more akin to traditional compiled languages like C.
-I missed the quick feedback I'm used to while developing Scheme on a REPL.
-After the initial compile, subsequent compiles are much quicker.
-
-```bash
-$ time make
-
-real  0m3.877s
-user  0m2.652s
-sys   0m0.605s
-```
-
-Four seconds can seem like a long time when you are making a series of small
-changes or chasing down a bug. There is a
-[module](https://github.com/part-cw/lambdanative/wiki/Using-Emacs) for REPL
-editing with Emacs. Since I don't use Emacs, I didn't give it a spin, but if I
-was developing a larger app, I might give it a try.
-
-The `install` step will move the executable to `~/Desktop/bleep/bleep` and
-launch it. This will launch a rectangular window.
-
-![Screenshot](../../screenshots/lambdanative-rectangle.png?raw=true "Rectangular window")
-
-This window looks awful lonely. Let's add some widgets!
+Qt Quick is sometimes criticized for having a foreign look on the desktop
+(neither Qt Quick or Qt Widgets use native widgets, but Qt Widgets look more
+native on the desktop). It also has a smaller set of available widgets. Native
+look and feel is not important to me, and Qt Quick has plenty of widgets to
+implement the example in this tutorial. Given a choice between defining a GUI
+procedurally and declaratively, I'm going to choose the declarative option.
 
 ## Coding the App
 
