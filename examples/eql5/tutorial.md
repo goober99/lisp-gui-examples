@@ -87,7 +87,45 @@ procedurally and declaratively, I'm going to choose the declarative option.
 
 The syntax of QML looks like a cross between JSON and CSS. Objects are
 specified followed by a pair of braces. Properties of the object are specified
-with key-value colon-separated pairs.
+with key-value colon-separated pairs. You can create white text on a blue
+background like this:
+
+```qml
+import QtQuick 2.0
+
+Rectangle {
+  width: 200
+  height: 100
+  color: "blue"
+
+  Text {
+    anchors.centerIn: parent
+    color: "white"
+    text: "Hello, world!"
+  }
+}
+```
+
+You can build custom GUI elements out of rectangles and other drawing
+primitives, but it would be nice to have some pre-defined widgets to use. Let's
+also import Qt Quick Controls and Qt Quick Layouts. You will need to have both
+modules installed. They are probably available in your distro's package manager
+(see above for installing them on Debian).
+
+```qml
+import QtQuick 2.0
+import QtQuick.Controls 2.0
+import QtQuick.Layouts 1.2
+```
+
+For maximum compatibility, I recommend specifying the minimum version of
+modules. You might have Qt Quick Controls 2.15 on the machine your developing
+on, but one of your users might have an earlier version. Only bump the version
+if a later version has features you need to use. For example,
+[`Layout.margins`](https://doc.qt.io/qt-5/qml-qtquick-layouts-layout.html#margins-attached-prop)
+wasn't introduced until Qt Quick Layouts 1.2. We'll be setting margins in the
+example we're building with this tutorial, so I imported version 1.2 of Qt
+Quick Layouts.
 
 ## Coding the App
 
