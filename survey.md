@@ -68,7 +68,9 @@ Many of the other libraries in this survey are good libraries but have a [bus
 factor](https://en.wikipedia.org/wiki/Bus_factor) of 1. Since the GUI library
 is part of the Racket project (the DrRacket IDE that is bundled with Racket is
 also built using the GUI library), there is no danger of it becoming
-unmaintained.
+unmaintained. Like all of Racket, the documentation for the GUI library is
+superb. Since the library is written in Racket, there is no C++ or Java
+documentation that you must mentally translate the examples from.
 
 There's even a WYSIWYG GUI designer for Racket ([MrEd
 Designer](https://github.com/Metaxal/MrEd-Designer)) if you're so inclined. The

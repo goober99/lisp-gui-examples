@@ -5,6 +5,8 @@ import QtQuick.Layouts 1.2
 ColumnLayout {
   id: root
 
+  property real frequency: 440
+
   function setFrequency(freq) {
     frequencySlider.value = freq
     frequencyField.value = freq
@@ -13,9 +15,13 @@ ColumnLayout {
   Slider {
     id: frequencySlider
     from: 20
-    value: 440
+    value: root.frequency
     to: 20000
-    onValueChanged: setFrequency(value)
+    //onValueChanged: setFrequency(value)
+    onValueChanged: {
+      console.log("CHANGING SLIDER TO " + value)
+      root.frequency = value
+    }
     Layout.fillWidth: true
     Layout.margins: 25
   }
@@ -28,14 +34,24 @@ ColumnLayout {
     Button {
       text: "<"
     }
-    SpinBox {
-      id: frequencyField
-      from: 20
-      value: 440
-      to: 20000
-      editable: true
-      onValueChanged: setFrequency(value)
+
+    RowLayout {
+      SpinBox {
+        id: frequencyField
+        from: 20
+        //value: frequencySlider.value
+        value: root.frequency
+        to: 20000
+        editable: true
+        //onValueChanged: setFrequency(value)
+        onValueChanged: {
+          console.log("CHANGING SPINBOX TO " + value)
+          root.frequency = value
+        }
+      }
+      Label { text: "Hz" }
     }
+
     Button {
       text: ">"
     }
@@ -45,17 +61,25 @@ ColumnLayout {
     spacing: 25
     Layout.margins: 25
 
-    SpinBox {
-      from: 1
-      value: 200
-      to: 600000
-      editable: true
+    RowLayout {
+      SpinBox {
+        from: 1
+        value: 200
+        to: 600000
+        editable: true
+      }
+      Label { text: "ms" }
     }
+
     Button {
       text: "Play"
     }
-    ComboBox {
-      model: ["A", "B", "C", "D", "E", "F", "G"]
+
+    RowLayout {
+      Label { text: "♪" }
+      ComboBox {
+        model: ["A", "B", "C", "D", "E", "F", "G"]
+      }
     }
   }
 }

@@ -109,8 +109,8 @@ Rectangle {
 You can build custom GUI elements out of rectangles and other drawing
 primitives, but it would be nice to have some pre-defined widgets to use. Let's
 also import Qt Quick Controls and Qt Quick Layouts. You will need to have both
-modules installed. They are probably available in your distro's package manager
-(see above for installing them on Debian).
+modules installed on your system. They are probably available in your distro's
+package manager (see above for installing them on Debian).
 
 ```qml
 import QtQuick 2.0
@@ -127,7 +127,123 @@ wasn't introduced until Qt Quick Layouts 1.2. We'll be setting margins in the
 example we're building with this tutorial, so I imported version 1.2 of Qt
 Quick Layouts.
 
-## Coding the App
+We arrange items in our UI using `ColumnLayout` and `RowLayout` from Qt Quick
+Layouts. `ColumnLayout` arranges its childrent vertically, and `RowLayout`
+arranged its children horizontally. At the top, there will be a slider, so
+we'll put a `Slider` within a `ColumnLayout`.
+
+```qml
+ColumnLayout {
+  id: main
+
+  Slider {
+    id: frequencySlider
+    from: 20
+    value: 440
+    to: 20000
+    Layout.fillWidth: true
+    Layout.margins: 25
+  }
+}
+```
+
+The range of frequencies audible by humans is typically between 20 Hz and 20
+KHz (we lose the ability to hear some of those higher frequencies as we age).
+The [musical note A above middle
+C](https://en.wikipedia.org/wiki/A440_(pitch_standard)) is 440 Hz. Since A4
+serves as a general tuning standard, it seems like a sensible default.
+`Layout.fillWidth` makes the slider take up the full width of the window.
+
+Under the slider, there will be a row (a great use for `RowLayout`) with two
+buttons and a spin box (a widget for entering a number within a fixed range).
+
+```qml
+RowLayout {
+  spacing: 25
+  Layout.alignment: Qt.AlignHCenter
+  Layout.margins: 25
+
+  Button {
+    text: "<"
+  }
+
+  RowLayout {
+    SpinBox {
+      id: frequencyField
+      from: 20
+      value: frequencySlider.value
+      to: 20000
+      editable: true
+    }
+    Label { text: "Hz" }
+  }
+
+  Button {
+    text: ">"
+  }
+}
+```
+
+Under that is another row of controls: another spin box, a button, and a
+drop-down menu to select notes from. Frequency is rather abstract. The
+drop-down gives the user the ability to select a musical note.
+
+```qml
+RowLayout {
+  spacing: 25
+  Layout.margins: 25
+
+  RowLayout {
+    SpinBox {
+      from: 1
+      value: 200
+      to: 600000
+      editable:true
+    }
+    Label { text: "ms" }
+  }
+
+  Button {
+    text: "Play"
+  }
+
+  RowLayout {
+    Label { text: "♪" }
+    ComboBox {
+      model: ["A", "B", "C", "D", "E", "F", "G"]
+    }
+  }
+}
+```
+
+I started this project with zero knowledge of QML. I went from Googling "qml"
+to the complete mockup above in about 30 minutes. I haven't written any of the
+application logic (in fact, we haven't even touched Common Lisp yet), but you
+can see how powerful a declarative syntax like QML is for defining GUIs. On big
+teams, you could even have a designer write the QML while a backend programmer
+wrote the logic. If you installed the QML viewer above (the qml package on
+Debian), you can preview your GUI with:
+
+```console
+qml bleep.qml
+```
+
+![Screenshot](../../screenshots/eql5-mockup.png?raw=true "QML preview")
+
+You can tell that the default style has been designed to be touch friendly. The
+handle on the slider is extra big so that it can be dragged with a finger. All
+the buttons have plenty of padding to make them easy targets. Qt Quick also
+comes with a platform-agnostic style called Fusion that offers a
+desktop-oriented look and feel. You can preview the example with the Fusion
+style by adding the `-style fusion` after the file name.
+
+```console
+$ qml bleep.qml -style fusion
+```
+
+![Screenshot](../../screenshots/eql5-fusion.png?raw=true "Fusion style")
+
+## Writing the Logic in Common Lisp
 
 If your interface will use text (such as labels on buttons), you must include a
 `FONTS` file in your application subdirectory. I just copied the `FONTS` file
