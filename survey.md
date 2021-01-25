@@ -39,7 +39,7 @@ to be able to make a reasonable assessment of each GUI library.
 
 Links: [Tutorial](https://blog.matthewdmiller.net/learn-racket-by-example-gui-programming) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/racket)
 
-<img align="right" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/racket-activitylog2.png" />
+<img align="right" width="640" height="409" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/racket-activitylog2.png" />
 
 "I want to learn Lisp, but which one should I learn?" is a question that pops
 up from time to time in places like Reddit. My answer is, "Just pick one. Once
