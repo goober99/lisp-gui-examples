@@ -4,9 +4,32 @@
 (require :qml-lisp "qml-lisp") ; Load qml-list.lisp package copied from example
 (use-package :qml) ; Import all external symbols from above package
 
-(write-line (ext:getenv "SHELL"))
-; use ext: setenv to set an environment variable
+; Scale used by slider
+(defparameter *min-position* 0)
+(defparameter *max-position* 2000)
+; Range of frequencies
+(defparameter *min-frequency* 20)
+(defparameter *max-frequency* 20000)
+
+; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
+; Adapted from https://stackoverflow.com/questions/846221/logarithmic-slider
+
+(defvar min-freq (log *min-frequency*))
+(defvar max-freq (log *max-frequency*))
+(defvar frequency-scale (/ (- max-freq min-freq) (- *max-position* *min-position*)))
+; Convert slider position to frequency
+(defun position->frequency (position)
+  (round (exp (+ min-freq (* frequency-scale (- position *min-position*))))))
+; Convert frequency to slider position
+(defun frequency->position (freq)
+  (round (/ (- (log freq) min-freq) (+ frequency-scale *min-position*))))
+
+; Use the desktop-oriented style Fusion instead of the default
+; https://doc.qt.io/QT-5/qtquickcontrols2-styles.html
+; EQL5 doesn't wrap the QQuickStyle class so using environment variable
+; use ext:setenv to set an environment variable
 ; https://common-lisp.net/project/ecl/static/manual/Operating-System-Interface.html
+(ext:setenv "QT_QUICK_CONTROLS_STYLE" "fusion")
 
 (defun run ()
   ; The *quick-view* variable is defined in qml-lisp.lisp

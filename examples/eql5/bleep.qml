@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.0
 import QtQuick.Layouts 1.2
+import EQL5 1.0
 
 ColumnLayout {
   id: root
@@ -14,12 +15,12 @@ ColumnLayout {
 
   Slider {
     id: frequencySlider
-    from: 20
-    value: root.frequency
-    to: 20000
+    from: 0
+    value: Lisp.call("frequency->position", 440)
+    to: 2000
     //onValueChanged: setFrequency(value)
     onValueChanged: {
-      console.log("CHANGING SLIDER TO " + value)
+      //console.log("CHANGING SLIDER TO " + value)
       root.frequency = value
     }
     Layout.fillWidth: true
@@ -36,17 +37,44 @@ ColumnLayout {
     }
 
     RowLayout {
+      /*
       SpinBox {
         id: frequencyField
         from: 20
         //value: frequencySlider.value
-        value: root.frequency
+        value: Lisp.call("position->frequency", root.frequency)
         to: 20000
         editable: true
         //onValueChanged: setFrequency(value)
         onValueChanged: {
           console.log("CHANGING SPINBOX TO " + value)
           root.frequency = value
+        }
+      }
+      */
+      SpinBox {
+        id: frequencyField
+        from: 20 * 100
+        //value: 440 * 100
+        value: Lisp.call("position->frequency", frequencySlider.value) * 100
+        to: 20000 * 100
+        stepSize: 100
+        editable: true
+
+        property int decimals: 2
+        property real realValue: value / 100
+
+        validator: DoubleValidator {
+          bottom: Math.min(frequencyField.from, frequencyField.to)
+          top: Math.max(frequencyField.from, frequencyField.to)
+        }
+
+        textFromValue: function(value, locale) {
+          return Number(value / 100).toLocaleString(locale, 'f', frequencyField.decimals)
+        }
+
+        valueFromText: function(text, locale) {
+          return Number.fromLocaleString(locale, text) * 100
         }
       }
       Label { text: "Hz" }
