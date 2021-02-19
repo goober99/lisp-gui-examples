@@ -10,7 +10,7 @@ part of the name (of both ECL and EQL5) refers to the fact that it can be
 embedded in existing C++ projects. For this tutorial, we'll be building a
 standalone desktop app.
 
-![Screenshot](../../screenshots/lambdanative.png?raw=true "Example screenshot")
+![Screenshot](../../screenshots/eql5.png?raw=true "Example screenshot")
 
 ## Compiling EQL5
 
@@ -59,7 +59,8 @@ $ sudo make install
 ```
 
 * Now `eql5` should be available to run. Verify it with `eql5 -qgui`, which
-will launch a GUI REPL.
+will launch a GUI REPL. This also gives you access to some documentation on the
+EQL5 functions. Go the the *Help* tab for a searchable list of functions.
 
 ## Building the GUI with QML
 
@@ -114,7 +115,7 @@ package manager (see above for installing them on Debian).
 
 ```qml
 import QtQuick 2.0
-import QtQuick.Controls 2.0
+import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.2
 ```
 
@@ -134,7 +135,7 @@ we'll put a `Slider` within a `ColumnLayout`.
 
 ```qml
 ColumnLayout {
-  id: main
+  id: root
 
   Slider {
     id: frequencySlider
@@ -170,10 +171,10 @@ RowLayout {
   RowLayout {
     SpinBox {
       id: frequencyField
+      editable: true
       from: 20
       value: frequencySlider.value
       to: 20000
-      editable: true
     }
     Label { text: "Hz" }
   }
@@ -195,10 +196,11 @@ RowLayout {
 
   RowLayout {
     SpinBox {
+      id: durationField
+      editable:true
       from: 1
       value: 200
       to: 600000
-      editable:true
     }
     Label { text: "ms" }
   }
@@ -230,517 +232,457 @@ qml bleep.qml
 
 ![Screenshot](../../screenshots/eql5-mockup.png?raw=true "QML preview")
 
+## Writing the Logic in Common Lisp
+
+Copy `qml-lisp.lisp` from the EQL5 example directory
+(`EQL5/examples/M-modules/quick/qml-lisp/qml-lisp.lisp`) to your working
+directory. This enables QML to call Lisp functions and vice versa. I'm not sure
+why this isn't built into EQL5, but it's easy enough to copy it from the Qt
+Quick examples that come with EQL5. Also, create a `bleep.lisp` for the program
+logic.
+
+```lisp
+(qrequire :quick) ; Have EQL5 use Qt Quick module from Qt
+(require :qml-lisp "qml-lisp") ; Load qml-lisp.lisp package copied from example
+(use-package :qml) ; Import all external symbols from above package
+```
+
+The `qrequire` function is part of the EQL5 bindings. It loads a specified Qt
+module. In our case, we want to load the Qt Quick module. Then we load the Lisp
+package we copied from the EQL5 examples that enables communication between
+Lisp and QML. We'll use these two imports to run the QML UI we created above.
+
+```lisp
+(defun run ()
+  ; QQuickView provides a window for displaying a Qt Quick user interface:
+  ; https://doc.qt.io/qt-5/qquickview.html
+  (setf qml:*quick-view* (qnew "QQuickView"))
+  (x:do-with qml:*quick-view*
+    (|setSource| (|fromLocalFile.QUrl| "bleep.qml"))
+    (|setTitle| "Bleep")
+    (|show|)))
+
+(run)
+```
+
+The `*quick-view*` variable is supplied by the `qml-lisp.lisp` file we copied
+over (hence the `qml` namespace). It can be either a QQuickView or QQuickWidget
+Qt object. We use `qnew` from EQL5 to create a
+[QQuickView](https://doc.qt.io/qt-5/qquickview.html) object. The `qnew`
+function creates a Qt object of a given class.
+
+The `x` namespace includes utility functions and macros that come with EQL5.
+Since this namespace is built into EQL5, I would have thought the `qml`
+namespace could have been too. The `x` namespace does not appear to be
+documented anywhere. I copied the usage of `do-with` from the Qt Quick examples
+that come with EQL5. It basically let's us chain together a bunch of Qt methods
+on the `*quick-view*` object.
+
+EQL5 comes with `qfun` for calling Qt methods on objects. For example, `(qfun
+qml:*quick-view* "show")` would call the `show` method on the
+`qml:*quick-view*` object. EQL5 also comes with a shorthand for this: `(|show|
+qml:*quick-view*)`. We can use this shorthand to set the source of the
+QQuickView to the QML file we created above, set a title for the window, and
+finally call the `show` method to display the window. Execute this with `eql5`,
+and you should get a window that looks just like the window you previewed above
+with `qml`.
+
+```console
+$ eql5 bleep.lisp
+```
+
 You can tell that the default style has been designed to be touch friendly. The
 handle on the slider is extra big so that it can be dragged with a finger. All
 the buttons have plenty of padding to make them easy targets. Qt Quick also
 comes with a platform-agnostic style called Fusion that offers a
-desktop-oriented look and feel. You can preview the example with the Fusion
-style by adding the `-style fusion` after the file name.
+desktop-oriented look and feel.
 
-```console
-$ qml bleep.qml -style fusion
+There are [four
+ways](https://doc.qt.io/QT-5/qtquickcontrols2-styles.html#using-styles-in-qt-quick-controls)
+to set the style. The first is using the `QQuickStyle` class, but this class is
+not wrapped by EQL5. The second is to pass a `-style` command line argument.
+Asking our user to include a command line argument to get the desired styling
+seems a bit much. The next option is to set a `QT_QUICK_CONTROLS_STYLE`
+environment variable. ECL has
+[`ext:setenv`](https://common-lisp.net/project/ecl/static/manual/Operating-System-Interface.html)
+for setting environment variables. We'll set the environment variable before
+defining `run` and then execute our code again:
+
+```lisp
+; Use the desktop-oriented style Fusion instead of the default
+; https://doc.qt.io/QT-5/qtquickcontrols2-styles.html
+; EQL5 doesn't wrap the QQuickStyle class so using environment variable
+(ext:setenv "QT_QUICK_CONTROLS_STYLE" "fusion")
 ```
 
 ![Screenshot](../../screenshots/eql5-fusion.png?raw=true "Fusion style")
 
-## Writing the Logic in Common Lisp
-
-If your interface will use text (such as labels on buttons), you must include a
-`FONTS` file in your application subdirectory. I just copied the `FONTS` file
-from one of the demos included with LambdaNative.
-
-```bash
-cd apps/bleep
-cp /opt/lambdanative/apps/LineDrop/FONTS .
-```
-
-This is what the file looks like:
-
-```
-DejaVuSans.ttf 8 18,25 ascii
-```
-
-For a description of the file format, see the documentation of the file on the
-[LambdaNative wiki](https://github.com/part-cw/lambdanative/wiki/FONTS).
-
-Your application subdirectory will already contain a `main.scm`. This file
-contains the basic skeleton for a GUI app (the black rectangle above):
-
-```scheme
-;; LambdaNative gui template
-
-(define gui #f)
-
-(main
-;; initialization
-  (lambda (w h)
-    (make-window 320 480)
-    (glgui-orientation-set! GUI_PORTRAIT)
-    (set! gui (make-glgui))
-
-    ;; initialize gui here
-
-  )
-;; events
-  (lambda (t x y)
-    (if (= t EVENT_KEYPRESS) (begin
-      (if (= x EVENT_KEYESCAPE) (terminate))))
-    (glgui-event gui t x y))
-;; termination
-  (lambda () #t)
-;; suspend
-  (lambda () (glgui-suspend) (terminate))
-;; resume
-  (lambda () (glgui-resume))
-)
-
-;; eof
-
-```
-
-I started by changing the comment at the top to
-
-```scheme
-;; bleep - GUI for generating a tone made with LambdaNative
-```
-
-The bulk of the skeleton consists of the [event
-loop](https://github.com/part-cw/lambdanative/wiki/Index-of-Module-eventloop).
-The `(main p1 p2 p3 p4 p5)` loop takes five functions as arguments:
-
-| Parameter | Description
-| --------- | -----------
-| p1        | Function to be run before the main loop is initialized. This is where you setup the GUI.
-| p2        | Main loop function, which is called constantly throughout the application's life. This is where you listen for events like key presses. Since most widgets take a callback, you shouldn't need to do much in this area.
-| p3        | Function to be run when the application is to be terminated.
-| p4        | Function, which is called when the application is suspended.
-| p5        | Function, which is called when the application is resumed.
-
-The functions supplied in the skeleton for p3, p4, and p5 should be sufficient
-for most applications. We won't need to touch them.
-
-```scheme
-(make-window 540 360)
-(glgui-orientation-set! GUI_LANDSCAPE)
-```
-
-I started by changing the dimensions and orientation of the window. Now let's
-add some widgets to that initialization `lambda`. I copy and pasted the example
-from the bottom of the [slider documentation
-page](https://github.com/part-cw/lambdanative/wiki/glgui-slider).
-
-```scheme
-(set! sl (glgui-slider gui 20 20 280 60 1 5 #f White White Orange Black num_25.fnt num_20.fnt #f White))
-(glgui-widget-set! gui sl 'showvalue #t)
-```
-
-If you are familiar with Scheme, that `set!` probably made you pause. Too many
-exclamation marks in my Scheme code always make me nervous. I immediately start
-wondering if there is a better way to write the code. As it should. Side
-effects should be avoided when possible. I tried changing the `set!` to
-`define` and got the following error when recompiling:
-
-```
-*** ERROR IN "/home/matthew/lambdanative/apps/bleep/main.scm"@97.5 -- Ill-placed 'define'
-```
-
-Gambit (the underlying Scheme implementation used by LambdaNative) only allows
-`define`s at the beginning of a `lambda` body. This actually conforms with the
-R[5-7]RS specs, but I'm used to Scheme implementations (such as Racket,
-Chicken, and MIT/GNU Scheme) that allow `define` anywhere in a `lambda` body.
-All the LambdaNative examples and demos use `set!`, so I used it as well.
-
-We must specify the color for several elements of the slider. LambdaNative
-doesn't use native widgets but draws its own widgets with OpenGL. I googled
-"color schemes" for inspiration and specified a few colors at the top of the
-script above the `(main)` loop that I could reference throughout the program.
-
-```scheme
-;; UI color palette
-(define *background-color* (color-rgb 26 26 29))
-(define *foreground-color* (color-rgb 195 7 63))
-(define *accent-color* (color-rgb 111 34 50))
-(define *text-color* (color-rgb 255 255 255))
-;; Scale used by slider
-(define *min-position* 0)
-(define *max-position* 2000)
-;; Range of frequencies
-(define *min-frequency* 20)
-(define *max-frequency* 20000)
-```
-
-The variable name `*background-color*` is just a Lisp naming convention for
-global parameters. LambdaNative provides `(color-rgb r g b)` for creating
-colors. I also defined variables for the scale used by the slider and the range
-of frequencies accepted by beep.
-
-We also need to specify the position and size of the slider. Both are specified
-in pixels. There aren't percentages or other scalable units you may be familiar
-with from CSS. There are functions to get the width and height of the window,
-so you could code the math to make a widget 80% the width of the window. Since
-we're dealing with a simple example with hard-coded window dimensions, I just
-hard-coded the position and size as well. Note that you specify the position
-along the y-axis as pixels from the bottom of the window. This seemed counter
-intuitive to me, and I continually caught myself trying to specify pixels from
-the top of the window.
-
-```scheme
-;; Background color
-(let ((w (glgui-width-get))
-      (h (glgui-height-get)))
-(glgui-box gui 0 0 w h *background-color*))
-
-;; Frequency slider
-(set! slider (glgui-slider gui 20 280 500 60 *min-position* *max-position* #f White *foreground-color* *accent-color* #f ascii_18.fnt ascii_18.fnt #f White))
-(glgui-widget-set! gui slider 'showlabels #f)
-```
-
-I set a background color for the entire window. The only way I could find to do
-this was to create a `glgui-box` the size of the entire window and set the
-color of the box. I also renamed the variable from `sl` to `slider`.
-LambdaNative has the tendency to use short, non-descriptive variable names
-throughout its examples and documentation. I prefer to use more descriptive
-variable names. Replace the fonts in the example slider code with the fonts we
-specified in the `FONTS` file. I also disabled the slider labels.
-
-The range of frequencies audible by humans is typically between 20 Hz and 20
-KHz (we lose the ability to hear some of those higher frequencies as we age).
-The [musical note A above middle
-C](https://en.wikipedia.org/wiki/A440_(pitch_standard)) is 440 Hz. Since A4
-serves as a general tuning standard, it seems like a sensible default.
-
-The scale of 20 to 20,000 is so large that 440 wouldn't appear to move the
+The scale of 20 to 20,000 is so large that 440 doesn't appear to move the
 slider at all. Ideally, 440 would fall about the middle of the slider. To
 achieve this, let's use a logarithmic scale.
 
 I found a [Stack Overflow
 answer](https://stackoverflow.com/questions/846221/logarithmic-slider/846249#846249)
 on how to map a slider to a logarithmic scale. The code given in the answer is
-JavaScript, but it was easy enough to port to Scheme.
+JavaScript. We can embed JavaScript directly into our QML, so we could use the
+JavaScript example. This being a Lisp tutorial, we are going to port it to
+Common Lisp.
 
-```scheme
-;; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
-;; Adapted from https://stackoverflow.com/questions/846221/logarithmic-slider
+```lisp
+; Scale used by slider
+(defparameter *min-position* 0)
+(defparameter *max-position* 2000)
+; Range of frequencies
+(defparameter *min-frequency* 20)
+(defparameter *max-frequency* 20000)
 
-(define min-freq (log *min-frequency*))
-(define max-freq (log *max-frequency*))
-(define frequency-scale (/ (- max-freq min-freq) (- *max-position* *min-position*)))
-;; Convert slider position to frequency
-(define (position->frequency position)
-  (inexact->exact (round (exp (+ min-freq (* frequency-scale (- position *min-position*)))))))
-;; Convert frequency to slider position
-(define (frequency->position freq) (/ (- (log freq) min-freq) (+ frequency-scale *min-position*)))
+; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
+; Adapted from https://stackoverflow.com/questions/846221/logarithmic-slider
+
+(defvar min-freq (log *min-frequency*))
+(defvar max-freq (log *max-frequency*))
+(defvar frequency-scale (/ (- max-freq min-freq) (- *max-position* *min-position*)))
+; Convert slider position to frequency
+(defun position->frequency (position)
+  (round (exp (+ min-freq (* frequency-scale (- position *min-position*))))))
+; Convert frequency to slider position
+(defun frequency->position (freq)
+  (round (/ (- (log freq) min-freq) (+ frequency-scale *min-position*))))
 ```
 
-I created two functions: one that takes the position on the slider and returns
-the frequency (`position->frequency`) and another that takes a frequency and
-returns the position on the slider (`frequency-position`). Now let's set the
-initial position of our slider with the `frequency->position` function.
+I added some global parameters to the top of the script. The variable name
+`*min-position*` is just a Lisp naming convention for global parameters. I came
+up with the range of 0-2,000 by trial and error. It seemed to strike the best
+balance between each step of the slider making a noticeable change to the
+frequency while still allowing the user to narrow in on a specific frequency
+with just the slider. Then we create two functions: one that takes the position
+on the slider and returns the frequency (`position->frequency`) and another
+that takes a frequency and returns the position on the slider
+(`frequency-position`).
 
-```scheme
-(glgui-widget-set! gui slider 'value (frequency->position 440))
+It would be useful if these global parameters were available both to Lisp and
+QML. Qt has [a way to embed C++ Objects into
+QML](https://doc.qt.io/qt-5/qtqml-cppintegration-contextproperties.html) by
+setting a context property on the root context. We could pass the string "Bugs
+Bunny" from C++ to QML this way:
+
+```cpp
+// C++
+QString fictionalRabbit = "Bugs Bunny";
+view.rootContext()->setContextProperty("fictionalRabbit", fictionalRabbit);
 ```
 
-Underneath the slider is a text field showing the current frequency, buttons to
-increase/decrease the frequency by one octave, and a play button.
-
-```scheme
-;; Frequency display
-(set! frequency-field (glgui-inputlabel gui 210 230 80 30 "440" ascii_18.fnt *text-color* *foreground-color*))
-(glgui-widget-set! gui frequency-field 'align GUI_ALIGNCENTER)
-(set! frequency-label (glgui-label gui 290 230 40 30 "Hz" ascii_18.fnt *foreground-color* *accent-color*))
-(glgui-widget-set! gui frequency-label 'align GUI_ALIGNCENTER)
-
-;; Octave buttons
-(set! lower-button (glgui-button-string gui 140 230 50 30 "<" ascii_18.fnt (lambda (g w t x y) #t)))
-(set! higher-button (glgui-button-string gui 350 230 50 30 ">" ascii_18.fnt (lambda (g w t x y) #t)))
-
-;; Play button
-(set! play-button (glgui-button-string gui 230 125 80 50 "Play" ascii_25.fnt (lambda (g w t x y) #t)))
+```qml
+// QML
+Text { text: fictionalRabbit }
 ```
 
-That last argument to `glgui-button-string` is a callback function. This is a
-function that is called when the button is pressed. I'm just trying to get the
-widgets layed out right now. I don't yet care about the function of the button,
-so I used anonymous functions (lambdas) that don't do anything for now.
+Using EQL5 and Lisp, it would look like this:
 
-The buttons do come with some default styling, but you'll probably want to
-tweak the look to fit your color scheme and UI design. We can use
-`glgui-widget-set!` to set parameters of a widget. Buttons have various
-parameters that can be set such as `'button-normal-color` and
-`'button-selected-color`.
-
-```scheme
-(glgui-widget-set! gui play-button 'button-normal-color *foreground-color*)
-(glgui-widget-set! gui play-button 'button-selected-color *accent-color*)
-(glgui-widget-set! gui play-button 'solid-color #t)
-(glgui-widget-set! gui play-button 'rounded #f)
+```lisp
+(|setContextProperty| (|rootContext| qml:*quick-view*)
+  "fictionalRabbit" (qvariant-from-value "Bugs Bunny" "QString"))
 ```
 
-That seems like a lot to type (or copy and paste) for each button. With CSS I'm
-able to define a style for all buttons or apply a class to buttons. I used a
-`for-each` loop to loop through all the buttons and apply the above styling:
+The order is reversed in Lisp compared to C++. Whereas in C++ you have
+`view.rootContext()`, in Lisp you do `(|rootContext| qml:*quick-view*)`. The
+method to call comes first. Then the object to call that method on followed by
+any additional arguments. The value passed must be a C++ object. EQL5 comes
+with `qvariant-from-value` that makes it easy to construct a `QVariant` of a
+specified type. That's more than I want to type for every variable I want to
+export from Lisp into QML, so I whipped up a little helper function:
 
-```scheme
-;; Style buttons
-(for-each (lambda (button)
-            (glgui-widget-set! gui button 'button-normal-color *foreground-color*)
-            (glgui-widget-set! gui button 'button-selected-color *accent-color*)
-            (glgui-widget-set! gui button 'solid-color #t)
-            (glgui-widget-set! gui button 'rounded #f))
-          (list lower-button higher-button play-button))
+```lisp
+; Helper function to make Lisp data available in QML
+; Allows writing (set-context-property variable-in-lisp "variableInLisp" "QString")
+; instead of (|setContextProperty| (|rootContext| qml:*quick-view*)
+;   "variableInLisp" (qvariant-from-value variable-in-lisp "QString"))
+(defun set-context-property (lisp-var qml-name type-name)
+  (let ((root-context (|rootContext| qml:*quick-view*))
+        (objectified (qvariant-from-value lisp-var type-name)))
+    (|setContextProperty| root-context qml-name objectified)))
 ```
 
-At this point, we are starting to have a nice looking interface, but it doesn't
-do anything. If you click the buttons or slide the slider, nothing happens.
-While the buttons take a callback function parameter, I couldn't find a way to
-wire up the slider to a function. I read the [`glgui-slider` documentation
-page](https://github.com/part-cw/lambdanative/wiki/glgui-slider) several times
-searching for clues.
+Then I added this to my `run` function:
 
-Finally, I resorted to looking at the source code for `glgui-slider`. Each of
-the widget documentation pages link directly to their implementation in the
-LambdaNative GitHub repo. I already mentioned that I ended up reading the
-LambdaNative source more than I would have liked for debugging. Documentation
-is one area where LambdaNative really could stand to improve. I scanned
-`slider.scm` and discovered it had a `'callback` parameter. I created a
-function that would set the frequency displayed in the `glgui-inputlabel` to
-the one that corresponded to the position of the `glgui-slider`.
-
-```scheme
-;; Link slider to text field display of frequency
-(define (adjust-frequency)
-  (glgui-widget-set! gui frequency-field 'label (number->string
-    (position->frequency (glgui-widget-get gui slider 'value)))))
+```lisp
+; Make data available in QML
+(set-context-property *min-position* "minPosition" "int")
+(set-context-property *max-position* "maxPosition" "int")
+(set-context-property *min-frequency* "minFrequency" "int")
+(set-context-property *max-frequency* "maxFrequency" "int")
 ```
 
-and wired it up to the slider:
+We now need to modify our QML to use these Lisp functions and variables. The
+first thing we need to do is add another `import` statement at the top.
 
-```scheme
-(glgui-widget-set! gui slider 'callback (lambda (parent widget event x y) (adjust-frequency)))
+```qml
+import QtQuick 2.0
+import QtQuick.Controls 2.2
+import QtQuick.Layouts 1.2
+import EQL5 1.0
 ```
 
-A callback function takes five arguments. In the code examples in the
-LambdaNative documentation, these always appeared as `(lambda (g w t x y))`.
-These one-letter variables aren't very descriptive, and the arguments of the
-callback functions don't appear to be documented. Through experimentation and
-reading the source code and examples, I worked out the following:
+This imports everything we need to call Lisp functions from QML.
 
-| Parameter | Description
-| --------- | -----------
-| g         | The [G]UI the widget belongs to. I used the name `parent` for this variable in my callback functions.
-| w         | The [w]idget that triggered the callback function. I used the name `widget` for this variable in my callback functions.
-| t         | The [t]ype of event. I used the name `event` for this variable in my callback functions.
-| x         | First argument of event (x coordinate in pixels, keyboard character, etc.)
-| y         | Second argument of event (y coordinate in pixels, modifier flags, etc.)
+If you played around with the QML mockup above, you may have noticed moving the
+slider automatically updated the spin box underneath it. This was done with a
+property binding. The value of the spin box was set to `frequencySlider.value`.
+Whenever the slider value changes, the spin box value automatically updates.
+This was fine for a quick mockup, but we'd like for it to work both ways. When
+you change the value of the spin box, the slider should also automatically
+update. Unfortunately, QML doesn't support [bi-directional property
+bindings](http://imaginativethinking.ca/bi-directional-data-binding-qt-quick/).
+What we'll do is create a property that we'll bind both the slider and spin box
+to. Then we'll create handlers in both to update this property.
 
-The callback function is only called once the user releases the slider handle.
-I want the user to get feedback as they drag the slider. You can write your own
-event handling code in the `lambda` that forms the second parameter of
-`(main)`. The generated skeleton already includes code to terminate the
-application when the `Esc` key is pressed. I added some code to call
-`adjust-frequency` when the slider handle is being dragged:
+```qml
+ColumnLayout {
+  id: root
 
-```scheme
-;; events
-  (lambda (t x y)
-    (if (= t EVENT_KEYPRESS) (begin
-      (if (= x EVENT_KEYESCAPE) (terminate))))
-    ;; Also update frequency when dragging slider (callback is only on release)
-    (if (and (glgui-widget-get gui slider 'downval) (= t EVENT_MOTION)) (adjust-frequency))
-    (glgui-event gui t x y))
+  property real frequency: 440
+
+  Slider {
+    id: frequencySlider
+    from: minPosition
+    value: Lisp.call("frequency->position", root.frequency)
+    to: maxPosition
+    onValueChanged: root.frequency = Lisp.call("position->frequency", value)
+    Layout.fillWidth: true
+    Layout.margins: 25
+  }
+
+...
+
+    RowLayout {
+      SpinBox {
+        id: frequencyField
+        editable: true
+        from: minFrequency
+        value: root.frequency
+        to: maxFrequency
+      }
+      Label { text: "Hz" }
+    }
+...
+}
 ```
 
-By looking at the implementation of `glgui-slider` in `slider.scm`, I noticed
-that LambdaNative was setting a `'downval` parameter whenever the user was
-holding down the mouse button on the slider handle. Whenever that parameter is
-true, I listen for an `EVENT_MOTION` event to call `adjust-frequency`.
+The range for the slider and spin box is now defined using the context
+properties set in Lisp. To call Lisp functions, use `Lisp.call()`. It's not
+pretty (the function name must be quoted and the list comma separated), but it
+gets the job done. If you run the code with EQL5 from a terminal, you can move
+the slider, and the spin box will update accordingly, but you'll get a whole
+bunch of these warnings in your terminal:
 
-I replaced the anonymous lambdas in the octave button declarations with
-callback functions called `decrease-octave` and `increase-octave`. An
+```
+QML Slider: Binding loop detected for property "value"
+```
+
+Whenever you move the slider, `onValueChanged` updates the `frequency`
+property. When `frequency` changes this triggers another update of the slider,
+which in turn, updates `frequency` again, creating a loop. Qt Quick Controls
+2.2 and later have `onMoved` in addition to `onValueChanged`. If you swap
+`onValueChanged` out for `onMoved`, it breaks the loop. With `onMoved`, the
+slider only updates the `frequency` property when interactively moved. When a
+change to `frequency` triggers a value change of the slider, it will not be
+propogated back to `frequency` avoiding the binding loop.
+
+The other problem with our quick QML mockup upon closer inspection is that the
+QML spin box only works on integers. We want more precision than that to
+represent notes. For example, middle C is 261.63. Qt Widgets has
+[`QDoubleSpinBox`](https://doc.qt.io/qt-5/qdoublespinbox.html), but Qt Quick
+doesn't have an [equivalent](https://bugreports.qt.io/browse/QTBUG-67349).
+
+There is an
+[example](https://doc.qt.io/qt-5/qml-qtquick-controls2-spinbox.html#custom-values)
+in the Qt documentation of the QML SpinBox on how it can be customized to
+accept floating point numbers. The example as-is truncates digits after 2
+decimal places, thus 500.157 would become 500.15. This is probably contrary to
+what users expect, so I added `Math.round` to `value` and `valueFromText`.
+
+```qml
+SpinBox {
+  id: frequencyField
+  editable: true
+  from: minFrequency * 100
+  value: Math.round(root.frequency * 100)
+  to: maxFrequency * 100
+  stepSize: 100
+  onValueChanged: root.frequency = value / 100
+
+  property int decimals: 2
+  property real realValue: value / 100
+
+  validator: DoubleValidator {
+    bottom: Math.min(frequencyField.from, frequencyField.to)
+    top: Math.max(frequencyField.from, frequencyField.to)
+  }
+
+  textFromValue: function(value, locale) {
+    return Number(value / 100).toLocaleString(locale, 'f', decimals)
+  }
+
+  valueFromText: function(text, locale) {
+    return Math.round(Number.fromLocaleString(locale, text) * 100)
+  }
+}
+```
+
+On either side of the spin box underneath the slider are buttons to
+increase/decrease the frequency by one octave. This could be done with a little
+JavaScript right in the QML, but since this is a Lisp tutorial, we're going to
+do it with Common Lisp. You can access QML properties from Lisp, but it needs
+`objectName` to be set. To have uniform access to QML items from both QML and
+Lisp, it is convenient to set both `id` and `objectName` to the same name.
+
+```qml
+ColumnLayout {
+  id: root
+  objectName: "root"
+
+  property real frequency: 440
+
+  ...
+}
+```
+
+Note the double quotes around the `objectName`. It can't be a bare keyword. It
+must be a string. We can then access properties of this item from Lisp with
+`q<` and `q>` (both from `qml-lisp.lisp` that we copied over.) They are
+shorthands for `qml-get` and `qml-set`, respectively.
+
+```lisp
+; Buttons increase and decrease frequency by one octave
+(defun adjust-octave (modifier)
+  (let* ((freq (q< |frequency| "root"))
+         (new-freq (* freq modifier)))
+    (unless (or (< new-freq *min-frequency*) (> new-freq *max-frequency*))
+      (q> |frequency| "root" new-freq))))
+(defun decrease-octave () (adjust-octave 0.5))
+(defun increase-octave () (adjust-octave 2))
+```
+
+Wire the QML buttons up to these functions. An
 [octave](https://en.wikipedia.org/wiki/Octave) is "the interval between one
 musical pitch and another with double its frequency."
 
-```scheme
-;; Set frequency slider and display
-(define (set-frequency freq)
-  (glgui-widget-set! gui slider 'value (frequency->position freq))
-  (glgui-widget-set! gui frequency-field 'label (number->string freq)))
-;; Buttons increase and decrease frequency by one octave
-(define (adjust-octave modifier)
-  (let ((new-freq (* (string->number (glgui-widget-get gui frequency-field 'label)) modifier)))
-    (if (and (>= new-freq *min-frequency*) (<= new-freq *max-frequency*)) (set-frequency new-freq))))
-(define (decrease-octave parent widget event x y) (adjust-octave 0.5))
-(define (increase-octave parent widget event x y) (adjust-octave 2))
-```
-
-The `'aftercharcb` callback of `glgui-inputlabel` is called after each
-character is typed or deleted. We can use this to update the slider as a user
-enters a frequency. What if a user (and you know they will) enters a number
-higher than 20,000 or a letter? We need a function that will only allow numbers
-within a given range.
-
-```scheme
-;; Only allow numbers within range of min-value and max-value
-(define (num-only min-value max-value old-value)
-  (lambda (parent widget)
-    (let* ((current-value (glgui-widget-get parent widget 'label))
-           (current-numified (string->number current-value)))
-      (if (or (= (string-length current-value) 0) ; Allow field to be empty
-              (and current-numified (>= current-numified min-value) (<= current-numified max-value)))
-          (set! old-value current-value)
-          (glgui-widget-set! parent widget 'label old-value)))))
-```
-
-If the user types a character that makes the value invalid, we want to revert
-to the last known good value. To accomplish this, I used a closure to remember
-the last known value. Many programming languages today have closures, but
-Scheme practically invented them. A closure enables variables to be associated
-with a function that persist through all the calls of the function.
-
-Now we can wire the `glgui-inputlabel` callback up to these functions.
-
-```scheme
-(set! frequency-range (num-only *min-frequency* *max-frequency* (glgui-widget-get gui frequency-field 'label)))
-(glgui-widget-set! gui frequency-field 'aftercharcb (lambda (parent widget event x y)
-  (frequency-range parent widget)
-  (let ((freq (string->number (glgui-widget-get parent widget 'label))))
-    (if freq (glgui-widget-set! parent slider 'value (frequency->position freq))))))
-```
-
-We call the `num-only` closure specifying the allowed range and initial value
-which returns a new function that can be used in the callback. After we make
-sure there are no high jinks going on with the value using the function created
-by the closure (`frequency-range`), we update the position of the slider using
-the current value of the text field.
-
-We can use the  `num-only` closure again to create a field to specify the
-duration of the beep in milliseconds:
-
-```scheme
-;; General Controls
-(glgui-label gui 20 40 80 30 "Duration" ascii_18.fnt *foreground-color*)
-(set! duration-field (glgui-inputlabel gui 110 40 80 30 "200" ascii_18.fnt *text-color* *foreground-color*))
-(glgui-widget-set! gui duration-field 'align GUI_ALIGNCENTER)
-(set! duration-range (num-only 1 600000 (glgui-widget-get gui duration-field 'label)))
-(glgui-widget-set! gui duration-field 'aftercharcb (lambda (parent widget event x y) (duration-range parent widget)))
-(glgui-label gui 195 40 40 30 "ms" ascii_18.fnt *foreground-color*)
-```
-
-Frequency is rather abstract. Let's also give the user the ability to select a
-musical note. We can store the corresponding frequencies for A4-G4 in a table.
-
-```scheme
-;; Notes -> frequency (middle A-G [A4-G4])
-;; http://pages.mtu.edu/~suits/notefreqs.html
-(define notes (list->table '((0 . 440.00)    ; A
-                             (1 . 493.88)    ; B
-                             (2 . 261.63)    ; C
-                             (3 . 293.66)    ; D
-                             (4 . 329.63)    ; E
-                             (5 . 349.23)    ; F
-                             (6 . 292.00)))) ; G
-```
-
-We'll give the user a drop-down menu. Whenever a note is selected from the
-drop-down menu, we'll look up the frequency in the table and set it using the
-`set-frequency` helper function we created for the octave buttons.
-
-```scheme
-(glgui-label gui 410 40 60 30 "Note" ascii_18.fnt *foreground-color*)
-(set! note (glgui-dropdownbox gui 470 40 50 30
-  (map (lambda (str)
-    (lambda (lg lw x y w h s) (if s (glgui:draw-box x y w h *foreground-color*))
-      (glgui:draw-text-left (+ x 5) y (- w 10) h str ascii_18.fnt *text-color*)))
-    (list "A" "B" "C" "D" "E" "F" "G"))
-  *accent-color* *foreground-color* *accent-color*))
-(glgui-widget-set! gui note 'scrollcolor *accent-color*)
-(glgui-widget-set! gui note 'callback (lambda (parent widget event x y)
-  (set-frequency (table-ref notes (glgui-widget-get parent widget 'current)))))
-```
-
-Now, let's make some noise. LambdaNative has a rtaudio module. We'll use that
-to generate a tone with a sine wave. Edit the `MODULES` file in your
-applications subdirectory and add rtaudio to the list. The Scheme API of the
-rtaudio module consists of essentially just two functions: `rtaudio-start` and
-`rtaudio-stop`. You must first register four real-time hooks (an initialization
-hook, input hook, output hook, and close hook) in a chunk of C code embedded
-within your Scheme code. I wish the rtaudio module had an API that allowed
-implementing these hooks in pure Scheme. Thankfully the
-[DemoRTAudio](https://github.com/part-cw/lambdanative/tree/master/apps/DemoRTAudio)
-app included with LambdaNative implements a sine wave, and I was able to copy
-and paste most of what I needed from there without spending a lot of time
-trying to figure out how to write a sine wave in C myself.
-
-```scheme
-;; Register C-side real-time audio hooks
-(c-declare  #<<end-of-c-declare
-
-#include <math.h>
-
-void rtaudio_register(void (*)(int), void (*)(float), void (*)(float*,float*), void (*)(void));
-
-double f;
-double srate=0;
-float buffer;
-
-void my_realtime_init(int samplerate) { srate=(double)samplerate; buffer=0; }
-void my_realtime_input(float v) { }
-void my_realtime_output(float *v1,float *v2) {
-  static double t=0;
-  buffer = 0.95*sin(2*M_PI*f*t);
-  *v1=*v2=(float)buffer;
-  t+=1/srate;
+```qml
+Button {
+  text: "<"
+  onClicked: Lisp.call("decrease-octave")
 }
-void my_realtime_close() { buffer=0; }
 
-end-of-c-declare
-)
-(c-initialize "rtaudio_register(my_realtime_init,my_realtime_input,my_realtime_output,my_realtime_close);")
+...
+
+Button {
+  text: ">"
+  onClicked: Lisp.call("increase-octave")
+}
 ```
 
-The [basic formula for a sine
-wave](http://pld.cs.luc.edu/telecom/mnotes/digitized_sound.html) is A sin(2πft)
-where *A* is amplitude, *f* is frequency, and *t* is time. We need a way to
-pass the frequency from our slider in the Scheme to the output hook in the C.
-Gambit scheme has a `c-lambda` special form that makes it possible to create a
-Scheme function that is a representative of a C function or code sequence.
+We gave the user a drop-down menu (combo box) in our QML mockup. Whenever a
+note is selected from the drop-down menu, we'll look up the frequency in a
+model and update the `frequency` property.
 
-```scheme
-(define rtaudio-frequency (c-lambda (double) void "f=___arg1;"))
+```qml
+ComboBox {
+  textRole: "note"
+  // Notes -> frequency (middle A-G [A4-G4])
+  // http://pages.mtu.edu/~suits/notefreqs.html
+  model: [
+    { note: "A", freq: 440.00 },
+    { note: "B", freq: 493.88 },
+    { note: "C", freq: 261.63 },
+    { note: "D", freq: 293.66 },
+    { note: "E", freq: 329.63 },
+    { note: "F", freq: 349.23 },
+    { note: "G", freq: 392.00 }
+  ]
+  onActivated: root.frequency = model[index]["freq"]
+}
 ```
 
-This creates a Scheme function that sets the f variable in our C chunk. Now
-let's create a Schem function that will set the frequency and start and stop
-the real-time audio subsystem.
+I also had to add `(si::trap-fpe t nil)` to the top of my Lisp file. If not, I
+got a `Condition of type: DIVISION-BY-ZERO` error whenever trying to expand the
+combo box. I'm not sure exactly why. I just copied it from one of the Qt Quick
+examples bundled with EQL5. There were no comments or documentation explaining
+its purpose.
 
-```scheme
-;; Generate a tone using the rtaudio module
-(define (generate-tone parent widget event x y)
-  ; Make sure neither frequency or duration were left blank
-  (if (= (string-length (glgui-widget-get parent frequency-field 'label)) 0) (set-frequency 1))
-  (if (= (string-length (glgui-widget-get parent duration-field 'label)) 0) (glgui-widget-set! parent duration-field 'label "1"))
-  (rtaudio-frequency (exact->inexact (string->number (glgui-widget-get parent frequency-field 'label))))
-  (rtaudio-start 44100 0.5)
-  (thread-sleep! (/ (string->number (glgui-widget-get parent duration-field 'label)) 1000))
-  (rtaudio-stop))
+Now, let's make some noise.
+
+```lisp
+(ql:quickload "cl-portaudio") ; Use Quicklisp to load CL-PortAudio
+
+; Generate a tone using CL-PortAudio
+(defun generate-tone (frequency duration)
+  (let ((frames-per-buffer 1024)
+        (sample-rate 44100d0)
+        (amplitude 0.5))
+    ; Initialize PortAudio environment
+    (portaudio:with-audio
+      ; Open and start audio stream
+      (portaudio:with-default-audio-stream (astream 1 1
+                                            :sample-format :float
+                                            :sample-rate sample-rate
+                                            :frames-per-buffer frames-per-buffer)
+        (dotimes (i (round (/ (* (/ duration 1000) sample-rate) frames-per-buffer)))
+          ; Write buffer to output stream
+          (portaudio:write-stream astream
+            ; portaudio:write-stream requires an array as input, not a list
+            (make-array frames-per-buffer :initial-contents
+              (loop for j from (+ (* frames-per-buffer i) 1) to (* frames-per-buffer (+ i 1)) collect
+                (let ((time (/ j sample-rate)))
+                  (* amplitude (sin (* 2 pi frequency time))))))))))))
 ```
 
-When playing a note such as B4 (493.88 Hz) that has a decimal point, the type
-passed from Scheme to C lines up with the C type `float`, but when passing an
-integer (such as 440), it will cause an error. The `exact->inexact` conversion
-forces Scheme to pass the value along as a `float`. Wire this up to the play
-button, and you're ready to make some noise.
+We'll use [Common Lisp bindings to
+PortAudio](https://github.com/filonenko-mikhail/cl-portaudio) to generate the
+tone. This can be installed with [Quicklisp](https://www.quicklisp.org/). If
+you don't already have Quicklisp installed, it's painless. See the Quicklisp
+website for more details, but here's an example of installing Quicklisp on
+Debian and configuring ECL. The steps should be the same for any Linux distro
+and macOS.
 
-```scheme
-(set! play-button (glgui-button-string gui 230 125 80 50 "Play" ascii_25.fnt generate-tone))
+```console
+$ curl curl -O https://beta.quicklisp.org/quicklisp.lisp
+$ ecl -load quicklisp.lisp
+> (quicklisp-quickstart:install)
+> (ql:add-to-init-file)
 ```
 
-LambdaNative has a lot of rough edges, not least of which is the documentation
-(or lack thereof). Looking at the source code for a widget seems to be the only
-way to determine all the parameters available for that widget. If you're like
-me, being able to write mobile apps in Lisp is a dream come true! LambdaNative
-may not be the smoothest development experience right now, but I hope to
-revisit it again in the future. It is being actively developed (and has the
-backing of a university research team), so my hopes are high for the future of
-LambdaNative.
+The first time you run `bleep.lisp`, it will take awhile as Quicklisp downloads
+CL-PortAudio (by default it will be downloaded to `~/quicklisp`). The "proper"
+way to include this dependency would be to use
+[ASDF](https://common-lisp.net/project/asdf/) and create a `.asd` file for the
+project. EQL5 includes [an
+example](https://gitlab.com/eql/EQL5/-/tree/master/my_app) of how to package an
+EQL5 app with ASDF. Since this is a quick tutorial, I'll stick with
+`ql:quickload`.
+
+CL-PortAudio comes with a couple of helpful macros that makes initializing
+PortAudio and starting a stream simple. The `with-audio` macro executes body
+within a PortAudio initialize/terminate environment. The
+`with-default-audio-stream` macro executes body with an opened and started
+stream and shuts down the stream after it is done.
+
+Then you just feed PortAudio arrays of samples, `:frames-per-buffer` at a time.
+I initiated `with-default-audio-stream` with one channel, so the array is just
+a single-dimensional array of floating point numbers. If you were producing
+stereo sound, you would generate a two-dimensional array. The [basic formula
+for a sine wave](http://pld.cs.luc.edu/telecom/mnotes/digitized_sound.html) is
+A sin(2πft) where *A* is amplitude, *f* is frequency, and *t* is time:
+
+```lisp
+(* amplitude (sin (* 2 pi frequency time)))
+```
+
+Wire this up to the play button in the QML, and you're ready to make some
+noise.
+
+```qml
+Button {
+  text: "Play"
+  onClicked: Lisp.call("generate-tone", frequency, durationField.value)
+}
+```
