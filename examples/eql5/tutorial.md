@@ -129,7 +129,7 @@ example we're building with this tutorial, so I imported version 1.2 of Qt
 Quick Layouts.
 
 We arrange items in our UI using `ColumnLayout` and `RowLayout` from Qt Quick
-Layouts. `ColumnLayout` arranges its childrent vertically, and `RowLayout`
+Layouts. `ColumnLayout` arranges its children vertically, and `RowLayout`
 arranged its children horizontally. At the top, there will be a slider, so
 we'll put a `Slider` within a `ColumnLayout`.
 
@@ -317,7 +317,7 @@ defining `run` and then execute our code again:
 
 ![Screenshot](../../screenshots/eql5-fusion.png?raw=true "Fusion style")
 
-The scale of 20 to 20,000 is so large that 440 doesn't appear to move the
+The scale of 20 to 20,000 is so large that 440 barely appears to move the
 slider at all. Ideally, 440 would fall about the middle of the slider. To
 achieve this, let's use a logarithmic scale.
 
@@ -645,7 +645,7 @@ Debian and configuring ECL. The steps should be the same for any Linux distro
 and macOS.
 
 ```console
-$ curl curl -O https://beta.quicklisp.org/quicklisp.lisp
+$ curl -O https://beta.quicklisp.org/quicklisp.lisp
 $ ecl -load quicklisp.lisp
 > (quicklisp-quickstart:install)
 > (ql:add-to-init-file)

@@ -20,7 +20,11 @@ $ cd lisp-gui-examples/examples
 ![Screenshot](screenshots/cljfx.png?raw=true "Cljfx screenshot")
 
 Clojure and Leiningen are available in the repository of most Linux distros.
-Install them from your distro's repo.
+Install them from your distro's repo. For Debian/Ubuntu:
+
+```console
+$ sudo apt install clojure leiningen
+```
 
 Navigate to the `cljfx` example subdirectory and run the project with
 Leiningen.
@@ -30,28 +34,63 @@ $ cd cljfx
 $ lein run
 ```
 
+### EQL5 (ECL Common Lisp/Qt)
+
+![Screenshot](screenshots/eql5.png?raw=true "EQL5 screenshot")
+
+ECL and Qt are available in the repository of most Linux distros, but you'll
+probably need to compile EQL5 from source. For instruction on compiling EQL5,
+see the [EQL5
+tutorial](https://github.com/goober99/lisp-gui-examples/blob/master/examples/eql5/tutorial.md#compiling-eql5).
+
+The example uses CL-PortAudio to generate the tone. Install Quicklisp to load
+CL-PortAudio.
+
+After compiling EQL5 from source, navigate to the `eql5` example subdirectory
+and execute bleep.lisp with EQL5.
+
+```console
+$ cd eql5
+$ curl -O https://beta.quicklisp.org/quicklisp.lisp
+$ ecl -load quicklisp.lisp
+> (quicklisp-quickstart:install)
+> (ql:add-to-init-file)
+> (quit)
+$ eql5 bleep.lisp
+```
+
 ### LambdaNative (Gambit Scheme)
 
 ![Screenshot](screenshots/lambdanative.png?raw=true "LambdaNative screenshot")
 
-Navigate to the `lambdanative` example subdirectory and execute the `bleep`
-executable.
+For instruction on setting up LambdaNative, see the [LambdaNative
+tutorial](https://github.com/goober99/lisp-gui-examples/blob/master/examples/lambdanative/tutorial.md#installing-lambdanative).
+
+Navigate to the `lambdanative` example subdirectory. Copy `apps/bleep` into
+your LambdaNative apps directory. Then from your LambdaNative root directory,
+compile the example.
 
 ```console
 $ cd lambdanative
-$ ./bleep
+$ cp -r apps/bleep ~/lambdanative/apps
+$ ./configure bleep
+$ make
+$ make install
 ```
-
-To build the example from source, see the README in the `lambdanative` example
-directory.
 
 ### Racket
 
 ![Screenshot](screenshots/racket.png?raw=true "Racket screenshot")
 
 Racket is available in the repository of most Linux distros. Install it from
-your distro's repo. The example uses the RSound package to generate the tone.
-You can install it with the `raco` utility that comes with Racket.
+your distro's repo. For Debian/Ubuntu:
+
+```console
+$ apt install racket
+```
+
+The example uses the RSound package to generate the tone. You can install it
+with the `raco` utility that comes with Racket.
 
 Navigate to the `racket` example subdirectory and execute bleep.rkt with
 Racket.
