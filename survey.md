@@ -21,7 +21,7 @@ experimental, a WIP, or someone's half-finished bindings to a GUI toolkit.
 Actively maintained doesn't necessarily mean a release within x months.
 Sometimes a stable library can go a couple years between releases. I'll also
 look to see if the maintainer seems to be responsive to issues and pull
-requests. If you thinked I missed a library that I should try out, let me know.
+requests. If you think I missed a library that I should try out, let me know.
 
 I didn't want to create the umpteenth calculator or todo example, so I built a
 simple GUI for generating a tone. I also wrote tutorials for creating the
@@ -77,3 +77,50 @@ Designer](https://github.com/Metaxal/MrEd-Designer)) if you're so inclined. The
 one thing on my wishlist that Racket lacks is a declarative syntax for
 declaring GUIs, but Racket being Racket, it wouldn't be too difficult to build
 a declarative DSL.
+
+### Cljfx
+
+Links: [Tutorial](https://blog.matthewdmiller.net/learn-clojure-by-example-javafx-gui-with-cljfx) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/cljfx)
+
+<img align="right" width="320" height="221" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/cljfx-defold-editor.png" />
+
+As effusive as I was about Racket, you might wonder why I have included a
+second library under "Recommended." Clojure is arguably the most popular modern
+Lisp dialect. It's [used](https://clojure.org/community/success_stories) by
+companies like Walmart. With Clojure's Java interop, you have access to the
+entire JVM ecosystem. Even with Racket's batteries-included philosophy and 3rd
+party packages available with `raco`, the number of libraries available for
+Racket pales in comparison to the number of Java libraries there are. There may
+be already-existing Java libraries that integrate with APIs or provide features
+that you need in your app.
+
+Cljfx is a Clojure wrapper of JavaFX. JavaFX doesn't use native controls,
+instead drawing its own controls. Swing apps have a dated look that I find
+unpleasant, but I actually like the look of JavaFX. You can completely
+customize the look and feel with CSS. If you want a custom look and feel for
+your app instead of native controls, Cljfx would be a better choice than
+Racket.
+
+The [editor](https://github.com/defold/defold/tree/dev/editor) for the
+[Defold](https://defold.com/) game engine is written in Clojure using Cljfx.
+The developer of Cljfx is
+[employed](https://www.youtube.com/watch?v=xcMNTKFmEgI) by King (the makers of
+Candy Crush) to work on the Defold editor. The README reads like an extended
+tutorial and there are lots of included examples, but other than that, there's
+not really any documentation. While the README is informative, some
+reference-style documentation would be nice. JavaFX is [well
+documented](https://openjfx.io/) and has a large number of controls available,
+but all the examples given are in Java, of course.
+
+Cljfx is a declarative wrapper of JavaFX. I really like being able to build
+GUIs declaratively. Instead of specifying the UI with a markup language like
+other declarative toolkits (such as QML), Cljfx uses Clojure maps. This enables
+some powerful features such as a composable UI, but maps are not as
+designer-friendly as a markup language when coordinating with a designer.
+
+One drawback with Cljfx and Clojure is startup time. On my desktop, it takes
+nearly 5 seconds from when I launch the little example app I created until the
+GUI appears on the screen. This is fine for big apps that you'll leave open and
+spend a lot of time in after starting it (like a game editor). It might be
+unacceptable for small apps that you open and close whenever you need them such
+as a calculator or note taking app.

@@ -62,27 +62,18 @@
 ; Compose the UI map to be rendered by JavaFX
 ; Splitting it up makes it more readable since lines don't nest as deeply.
 
-; Text field limited to entering numbers within range that updates specified
-; key in global state atom (state-key)
-(defn num-filter [change]
-  (let [input (.getControlNewText change)
-        numified (read-string input)]
-    (if (or (= input "") (number? numified))
-        change
-        nil)))
-(defn number-field [{:keys [min-value max-value init-value state-key label]}]
+; Spinner box with label
+(defn number-field [{:keys [value-factory-class min-value max-value init-value state-key label]}]
   {:fx/type :h-box
    :alignment :center
    :spacing 5
-   :children [{:fx/type :text-field
-               :pref-column-count (+ 1 (count (str max-value)))
-               :text-formatter {:fx/type :text-formatter
-                                :value-converter :number
-                                :filter num-filter
-                                :value init-value
-                                :on-value-changed #(cond (< % min-value) (swap! *state assoc state-key min-value)
-                                                         (> % max-value) (swap! *state assoc state-key max-value)
-                                                         :else (swap! *state assoc state-key %))}}
+   :children [{:fx/type :spinner
+               :editable true
+               :value-factory {:fx/type value-factory-class
+                               :min min-value
+                               :max max-value
+                               :value init-value}
+               :on-value-changed #(swap! *state assoc state-key %)}
               {:fx/type :label
                :text label}]})
 
@@ -106,6 +97,7 @@
                :label "<"
                :modifier 0.5}
               {:fx/type number-field
+               :value-factory-class :double-spinner-value-factory
                :min-value min-frequency
                :max-value max-frequency
                :init-value frequency
@@ -121,6 +113,7 @@
   {:fx/type :h-box
    :spacing 20
    :children [{:fx/type number-field
+               :value-factory-class :integer-spinner-value-factory
                :min-value 1
                :max-value 600000 ; 10 minutes
                :init-value duration

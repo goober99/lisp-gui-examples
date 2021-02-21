@@ -197,20 +197,33 @@ function:
    :value (frequency->position frequency)})
 ```
 
-Underneath the slider is a text field showing the current frequency.
+Underneath the slider is a spinner showing the current frequency.
 
 ```clojure
+(defn number-field [{:keys [value-factory-class min-value max-value init-value state-key label]}]
+  {:fx/type :h-box
+   :alignment :center
+   :spacing 5
+   :children [{:fx/type :spinner
+               :editable true
+               :value-factory {:fx/type value-factory-class
+                               :min min-value
+                               :max max-value
+                               :value init-value}}
+              {:fx/type :label
+               :text label}]})
+
 (defn frequency-controls [{:keys [frequency]}]
   {:fx/type :h-box
    :alignment :center
    :spacing 20
-   :children [{:fx/type :h-box
-               :alignment :center
-               :spacing 5
-               :children [{:fx/type :text-field
-                           :text (str frequency)}
-                          {:fx/type :label
-                           :text "Hz"}]}]})
+   :children [{:fx/type number-field
+               :value-factory-class :double-spinner-value-factory
+               :min-value min-frequency
+               :max-value max-frequency
+               :init-value frequency
+               :state-key :frequency
+               :label "Hz"}]})
 ```
 
 Add this to the `:children` vector of the `:v-box` in the `root` map:
@@ -278,10 +291,10 @@ this function:
 :on-value-changed #(set-frequency (position->frequency %))
 ```
 
-and add an `:on-text-changed` property to the `:text-field`:
+and add an `:on-value-changed` property to the `:spinner`:
 
 ```clojure
-:on-text-changed #(set-frequency (read-string %))
+:on-value-changed #(swap! *state assoc state-key %)
 ```
 
 And that's it. When one changes, the other does too. Once you get your head
@@ -321,98 +334,8 @@ Now just add these buttons to the `:children` vector of the `:h-box` in the
   :modifier 2}]
 ```
 
-If you slide the slider, the text field updates accordingly. If you type a
-number in the text field, the slider updates accordingly. All good, right? What
-if a user (and you know they will) enters a number higher than 20,000 or a
-letter?
-
-JavaFX has a `TextFormatter` class for this purpose. The `TextFormatter` uses a
-filter that can intercept and modify user input and a value converter that
-converts the value of the text field to a specified type whenever the field
-loses focus or the user hits Enter. The filter should be a function that
-accepts a Java `TextFormatter.Change` object and either returns that object or
-returns null (`nil` in Clojurese) to reject the change.
-
-```clojure
-; Text field limited to entering numbers within range that updates specified
-; key in global state atom (state-key)
-(defn num-filter [change]
-  (let [input (.getControlNewText change)
-        numified (read-string input)]
-    (if (or (= input "") (number? numified))
-        change
-        nil)))
-(defn number-field [{:keys [min-value max-value init-value state-key label]}]
-  {:fx/type :h-box
-   :alignment :center
-   :spacing 5
-   :padding {:top 0 :bottom 0 :left 20 :right 20}
-   :children [{:fx/type :text-field
-               :pref-column-count (+ 1 (count (str max-value)))
-               :text-formatter {:fx/type :text-formatter
-                                :value-converter :number
-                                :filter num-filter
-                                :value init-value
-                                :on-value-changed #(cond (< % min-value) (swap! *state assoc state-key min-value)
-                                                         (> % max-value) (swap! *state assoc state-key max-value)
-                                                         :else (swap! *state assoc state-key %))}}
-              {:fx/type :label
-               :text label}]})
-```
-
-Cljfx doesn't provide wrappers for the methods of `TextFormatter.Change`, but
-we can call the `getControlNewText()` method using Clojure's Java interop. This
-method returns the complete new text wich will be used on the control after the
-change. We can check this value to determine if we want to accept the change or
-not.
-
-A caveat here is that the value of `:filter` [must
-be](https://github.com/cljfx/cljfx/issues/114#issuecomment-754642403) a
-top-level️ function. I wish I could define `:filter` as an anonymous function.
-This would allow me to do something like also preventing the user from even
-entering a number higher than the allowed range rather than just reverting to
-the maximum value once the value is committed.
-
-```clojure
-:filter #(let [input (.getControlNewText %])
-               numified (read-string input)]
-           (if (or (= input "") (and (number? numified) (<= max-value)))
-               %
-               nil))
-```
-
-If you try the above, it will throw a `Replace forbidden` error. That's because
-`:filter` is a constructor argument of `TextFormatter` that cannot be modified
-afterward. If you use an anonymous function, every call to `number-field`
-(whenever the UI is being rerendered due to a change of state) will try to
-create a new instance of the filter function, which is forbidden. But by making
-`num-filter` a top-level function, it is now out of the scope of `max-value`. I
-tried passing `max-value` to it by wrapping `num-filter` with a function that
-takes `max-value` and calling that function in `:filter`, but that still
-resulted in `Replace forbidden`. I also tried defining `max-value` at the
-top-level and wrapping the map inside `number-field` with `binding` to reassign
-the value of `max-value`, but since `num-filter` is being passed to the
-`TextFormatter` and called later it is called outside the scope of the
-`binding` and still unable to see `max-value`. I finally gave up and fell back
-on just having the field revert to `max-value` once the value is committed. If
-anyone has a solution for getting `max-value` to the `num-filter` function, I
-welcome pull requests.
-
-Now let's replace the baseline `:text-field` and the `:h-box` surrounding it
-with our new `number-field`:
-
-```clojure
-{:fx/type number-field
- :min-value min-frequency
- :max-value max-frequency
- :init-value frequency
- :state-key :frequency
- :label "Hz"}
-```
-
-Let's use this `number-field` again to create a field to specify the duration
-of the beep in milliseconds. First, let's add a key to our global state atom to
-track duration:
+Let's use another spinner to specify the duration of the beep in milliseconds.
+First, let's add a key to our global state atom to track duration:
 
 ```clojure
 (def *state
@@ -427,6 +350,7 @@ Then create our duration field:
   {:fx/type :h-box
    :spacing 20
    :children [{:fx/type number-field
+               :value-factory-class :integer-spinner-value-factory
                :min-value 1
                :max-value 600000 ; 10 minutes
                :init-value duration
