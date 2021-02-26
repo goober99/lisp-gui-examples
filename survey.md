@@ -124,3 +124,69 @@ GUI appears on the screen. This is fine for big apps that you'll leave open and
 spend a lot of time in after starting it (like a game editor). It might be
 unacceptable for small apps that you open and close whenever you need them such
 as a calculator or note taking app.
+
+## Other Options (listed alphabetically)
+
+### LambdaNative
+
+Links: [Tutorial](https://blog.matthewdmiller.net/learn-lambdanative-by-example-desktop-gui) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/lambdanative)
+
+<img align="right" width="480" height="320" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/lambdanative-phone-oximeter.jpg" />
+
+Don't build a desktop app with LambdaNative. Let me be clear: My advice to
+avoid this framework only applies to building desktop apps, which the scope of
+this survey is limited to. LambdaNative is also capable of building Android,
+iOS, and even BlackBerry apps (and also non-GUI apps for OpenWrt, but I can't
+for the life of me think of why you would use LambdaNative to create a non-GUI
+app instead of just using the underlying Gambit itself or one of a dozen other
+Scheme implementations). I can't speak to LambdaNative's quality on mobile
+since I haven't developed a mobile app using it myself yet, but its development
+seems to be more oriented toward mobile. I hope to try it out for a mobile app
+in the future.
+
+According to the [LambdaNative website](https://www.lambdanative.org/), it is
+developed and maintained by the Pediatric Anesthesia Research Team (PART) and
+the Electrical Engineering in Medicine (ECEM) group at the University of
+British Columbia, and it has been used in clinical trials of medical technology
+in more than 10 countries involving around 100,000 subjects in all. I'm not
+sure how many developer resources this arrangement provides, but it definitely
+could use with a graduate assisstant or student being assigned to spend a
+summer improving the documentation. Be prepared to read the source code of a
+module (helpfully the documentation for each module links to the source code
+implementing that module) to determine all the parameters and options for that
+module. That's actually not the reason I recommend against using this framework
+for a desktop app. The modules are written in very clear, easy-to-read Scheme,
+and I assume if you're developing an app with Scheme that you know Scheme well
+enough to figure it out.
+
+LambdaNative falls into the camp of GUI toolkits that draws its own widgets
+instead of using native widgets. It uses OpenGL for rendering. This is fraught,
+because even seemingly simple widgets have multiple features such as
+copy-and-paste and drag-and-drop that are needed in order for the widget to
+behave as expected by users. As an example, I used a text field in the example
+I implemented with LambdaNative. Here are just a few features I found lacking
+from this one widget: I can't select the entire contents of the field and hit
+delete or type to replace. I have to backspace each character individually. I
+can't copy-and-paste into the field using Ctrl-V or drag-and-drop. When I
+initially created the example, I couldn't input numbers using my keyboard's
+numpad, only the row of numbers above the rows of letters. This has been fixed
+in a subsequent version of LambaNative, and I'm now able to use my numpad. I
+also used a dropdown box. My mouse wheel won't scroll through the options in
+the dropdown. I have to drag the list up and down to scroll. Maybe the widgets
+are more feature complete on mobile (I can't attest one way or the other), but
+at least for desktop, unless you're developing an app that consists almost
+entirely of custom widgets, I would steer far clear of LambdaNative.
+
+Unlike most other GUI toolkits I reviewed, LambdaNative lacks any container
+widgets for laying out other widgets in columns and rows. This wouldn't be so
+bad except each widget must be layed out by pixel. The size and position
+attributes of each widget only accept pixels, not percentages or other scalable
+units you may be familiar with from CSS. This is especially strange for a
+framework that advertises itself as a way to create both desktop and mobile
+apps from a single codebase. Also, LambdaNative doesn't come with even a basic
+or default theme. Most of the widgets have required parameters for things such
+as color and font. You can't even create a slider without specifying the colors
+of the elments of the slider.
+
+I'm going to keep an eye on LambdaNative for mobile development but stay away
+from it for desktop development.
