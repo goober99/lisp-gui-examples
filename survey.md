@@ -82,7 +82,7 @@ a declarative DSL.
 
 Links: [Tutorial](https://blog.matthewdmiller.net/learn-clojure-by-example-javafx-gui-with-cljfx) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/cljfx)
 
-<img align="right" width="320" height="221" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/cljfx-defold-editor.png" />
+<img align="right" width="350" height="242" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/cljfx-defold-editor.png" />
 
 As effusive as I was about Racket, you might wonder why I have included a
 second library under "Recommended." Clojure is arguably the most popular modern
