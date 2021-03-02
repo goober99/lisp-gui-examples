@@ -186,7 +186,9 @@ framework that advertises itself as a way to create both desktop and mobile
 apps from a single codebase. Also, LambdaNative doesn't come with even a basic
 or default theme. Most of the widgets have required parameters for things such
 as color and font. You can't even create a slider without specifying the colors
-of the elments of the slider.
+of the elements of the slider. It would have been nice to have had some kind of
+styling mechanism like a theme engine or CSS instead of being required to
+specify basic style parameters for each individual widget.
 
 I'm going to keep an eye on LambdaNative for mobile development but stay away
 from it for desktop development.
