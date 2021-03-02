@@ -196,34 +196,18 @@ or slide the slider, nothing happens. The widgets have a `command` option that
 wires the widget up to a function. If we add a command to the slider, that
 command will be called each time the slider is moved.
 
-```racket
-; Link slider to text field display of frequency
-(define (adjust-frequency widget event)
-  (send frequency-field set-value
-    (~a (position->frequency (send widget get-value)))))
-(define (adjust-slider entry event)
-  (define new-freq (string->number (send entry get-value)))
-  (send slider set-value
-    (frequency->position (if new-freq new-freq *min-frequency*))))
+```scheme
+(define slider (tk 'create-widget 'scale 'from: *min-position* 'to: *max-position*))
+(slider 'set (frequency->position 440))
+(slider 'configure 'command: (lambda (x) (frequency-int 'set (position->frequency x))))
 ```
 
-A callback function takes two arguments: the first is the instance of the
-object that called it and the second is the event type. The `text-field%`
-expects a string, so we have to convert the number returned by
-`position->frequency` to a string with `~a`. Next all there is to do is wire
-these functions up to the widgets:
-
-```racket
-(define slider (new slider% [label #f]
-                            ...
-                            [callback adjust-frequency]
-                            ...))
-...
-(define frequency-field (new text-field% [label #f]
-                                         ...
-                                         [callback adjust-slider]
-                                         ...))
-```
+The command for the slider takes one argument that indicates the new value of
+the slider. You can include the command as an option when you create the
+widget, but you can also add it later with `configure`. Here we add it later,
+because the command updates the spin box we create later. If the command were
+included when we created the widget, then when we `set` the initial value, it
+would trigger the command, but the spin box would not exist yet.
 
 Wire the buttons up to callback functions called `decrease-octave` and
 `increase-octave`. An [octave](https://en.wikipedia.org/wiki/Octave) is "the

@@ -39,13 +39,28 @@
 (tk/wm 'title tk "Bleep")
 
 ; Frequency controls
+
+; Set frequency slider and display
+(define (set-frequency freq)
+  (print "setting slider to " freq)
+  (slider 'set (frequency->position freq))
+  (print "setting spin box to " freq)
+  (frequency-int 'set freq)
+  (print "octave complete"))
+
+; Buttons increase and decrease frequency by one octave
+(define (adjust-octave modifier)
+  (set-frequency (* (string->number (frequency-int 'get)) modifier)))
+(define (decrease-octave) (adjust-octave 0.5))
+(define (increase-octave) (adjust-octave 2))
+
 (define slider (tk 'create-widget 'scale 'from: *min-position* 'to: *max-position*))
 (slider 'set (frequency->position 440))
-(slider 'configure 'command: (lambda (x) (frequency-int 'set (position->frequency x))))
-(define lower-button (tk 'create-widget 'button 'text: "<"))
+(slider 'configure 'command: (lambda (x) (print "slider triggered on " x) (frequency-int 'set (position->frequency x)) (print "slider callback complete")))
+(define lower-button (tk 'create-widget 'button 'text: "<" 'command: decrease-octave))
 (define-values (frequency-ext frequency-int)
   (units-spinbox *min-frequency* *max-frequency* 440 "Hz"))
-(define higher-button (tk 'create-widget 'button 'text: ">"))
+(define higher-button (tk 'create-widget 'button 'text: ">" 'command: increase-octave))
 
 ; Layout widgets in a grid
 (tk/grid slider 'row: 0 'columnspan: 3 'sticky: 'ew 'padx: 20 'pady: 20)
