@@ -170,7 +170,8 @@ to increase/decrease the frequency by one octave.
 ; e.g. (define-values (box-with-label just-box) (units-spinbox 1 12 6 "inches"))
 (define (units-spinbox from to initial units)
   (let* ((container (tk 'create-widget 'frame))
-         (spinbox (container 'create-widget 'spinbox 'from: from 'to: to))
+         (spinbox (container 'create-widget 'spinbox 'from: from 'to: to
+                             'width: (+ 4 (string-length (number->string to)))))
          (label (container 'create-widget 'label 'text: units)))
     (spinbox 'set initial)
     (tk/pack spinbox label 'side: 'left 'padx: 2)
@@ -202,9 +203,30 @@ command will be called each time the slider is moved.
 ```
 
 The command for the slider takes one argument that indicates the new value of
-the slider. Wire the buttons up to callback functions called `decrease-octave`
-and `increase-octave`. An [octave](https://en.wikipedia.org/wiki/Octave) is
-"the interval between one musical pitch and another with double its frequency."
+the slider. The spin box does have a `command` option, but the command is only
+called when the value is changed by clicking the up or down arrow, not when the
+value is changed by other means such as typing a frequency into the field. Tk
+has a `bind` command (the Scheme `tk/bind` function) that allows binding
+functions to an event on a widget. We'll bind our callback to the `KeyRelase`
+event. The `tk/bind` function takes up to three arguments. The first is the
+widget to bind to (or a tag created with `tk/bindtags` to apply the binding to
+multiple widgets). The second is the event pattern. The event pattern is
+surrounded by angle brackets and can specify modifiers, event types, and more.
+You can find detailed documentation on the event pattern in the [Tcl/Tk
+documentation](https://www.tcl.tk/man/tcl8.6/TkCmd/bind.htm). The third is a
+lambda expression to associate with the event.
+
+```scheme
+(tk/bind frequency-int '<KeyRelease> (lambda ()
+  ; If frequency value is a valid number, set slider to current value
+  (let ((numified (string->number (frequency-int 'get))))
+    (when numified
+      (slider 'configure 'value: (frequency->position numified))))))
+```
+
+Wire the buttons up to callback functions called `decrease-octave` and
+`increase-octave`. An [octave](https://en.wikipedia.org/wiki/Octave) is "the
+interval between one musical pitch and another with double its frequency."
 
 ```scheme
 ; Set frequency slider and display
@@ -225,90 +247,76 @@ number in the text field, the slider updates accordingly. All good, right? What
 if a user (and you know they will) enters a number higher than 20,000 or a
 letter?
 
-The widgets included with Racket are pretty basic, but we can extend the
-classes of the built-in widgets to create custom widgets. Let's extend the
-`text-field%` class to create a new `number-field%` class. This class will have
-two additional init variables that specify a `min-value` and `max-value` and
-only allow numbers that fall within that range.
+Let's extend the function that returns our labeled spin box to bind a
+validation function to the `FocusOut` event on the spin box. The spin box does
+have a `validatecommand` option, but I wasn't able to get it working. I looked
+through the examples that have come with the various variations of PS/Tk and
+couldn't find a single example of a spin box with a `validatecommand`. I even
+looked at the source code for
+[Bintracker](https://github.com/bintracker/bintracker/), a chiptune audio
+workstation written in Chicken Scheme with a PS/Tk GUI and developed by the
+current maintainer of the PS/Tk egg. Even it binds a `validate-new-value`
+function to the `Return` and `FocusOut` events of the spin box rather than
+using `validatecommand`.
 
-```racket
-; Extend the text-field% class to validate data when field loses focus. Field
-; should contain only numbers within allowed range. Otherwise, set to min.
-(define number-field%
-  (class text-field%
-    ; Add init variables to define allowed range
-    (init min-value max-value)
-    (define min-allowed min-value)
-    (define max-allowed max-value)
-    (super-new)
-    (define/override (on-focus on?)
-      (unless on?
-        (define current-value (string->number (send this get-value)))
+```scheme
+; Create a spin box with a units label
+; Returns frame widget encompassing both spin box and label and the spin box
+; widget itself. This way you can access the value of the spin box.
+; e.g. (define-values (box-with-label just-box) (units-spinbox 1 12 6 "inches"))
+(define (units-spinbox from to initial units)
+  (let* ((container (tk 'create-widget 'frame))
+         (spinbox (container 'create-widget 'spinbox 'from: from 'to: to
+                             'width: (+ 4 (string-length (number->string to)))))
+         (label (container 'create-widget 'label 'text: units)))
+    (spinbox 'set initial)
+    (tk/bind spinbox '<FocusOut> (lambda ()
+      (let ((current-value (string->number (spinbox 'get))))
         (unless (and current-value
-                     (>= current-value min-allowed)
-                     (<= current-value max-allowed))
-          (send this set-value (~a min-allowed))
+                     (>= current-value from)
+                     (<= current-value to))
+          (spinbox 'set from)
           ; Also reset slider position to make sure it still matches display
-          (send slider set-value (string->number (send frequency-field get-value))))))))
+          (slider 'configure 'value: (frequency->position (string->number (frequency-int 'get))))))))
+    (tk/pack spinbox label 'side: 'left 'padx: 2)
+    (values container spinbox)))
 ```
 
-Then we can replace our `text-field%` with a `number-field%`.
+We'll also use this function to create a field to specify the duration of the
+beep in milliseconds:
 
-```racket
-(define frequency-field (new number-field% [label #f]
-                                           [parent frequency-pane]
-                                           [min-value *min-frequency*]
-                                           [max-value *max-frequency*]
-                                           [callback adjust-slider]
-                                           [init-value "440"]
-                                           [min-width 64]
-                                           [stretchable-width #f]))
-```
-
-Let's use this `number-field%` again to create a field to specify the duration
-of the beep in milliseconds:
-
-```racket
-(define control-pane (new horizontal-pane% [parent frame]
-                                           [border 25]
-                                           [spacing 25]))
-(define duration-pane (new horizontal-pane% [parent control-pane]))
-(define duration-field (new number-field% [label "Duration "]
-                                          [parent duration-pane]
-                                          [min-value 1]
-                                          [max-value 600000] ; 10 minutes
-                                          [init-value "200"]
-                                          [min-width 120]))
+```scheme
+(define-values (duration-ext duration-int) (units-spinbox 1 600000 200 "ms"))
+(tk/grid duration-ext 'row: 2 'column: 0 'padx: 20 'pady: 20)
 ```
 
 Frequency is rather abstract. Let's also give the user the ability to select a
-musical note. We can store the corresponding frequencies for A4-G4 in a hash
-table.
+musical note. We can store the corresponding frequencies for A4-G4 in an
+association list.
 
-```racket
+```scheme
 ; Notes -> frequency (middle A-G [A4-G4])
 ; http://pages.mtu.edu/~suits/notefreqs.html
-(define notes (hash "A" 440.00
-                    "B" 493.88
-                    "C" 261.63
-                    "D" 293.66
-                    "E" 329.63
-                    "F" 349.23
-                    "G" 292.00))
+(define notes '(("A" 440.00)
+                ("B" 493.88)
+                ("C" 261.63)
+                ("D" 293.66)
+                ("E" 329.63)
+                ("F" 349.23)
+                ("G" 292.00)))
 ```
 
 We'll give the user a drop-down menu. Whenever a note is selected from the
-drop-down menu, we'll look up the frequency in the hash table and set it using
-the `set-frequency` helper function we created for the octave buttons.
+drop-down menu, we'll look up the frequency in the association list and set it
+using the `set-frequency` helper function we created for the octave buttons.
 
-```racket
-; Set frequency to specific note
-(define (set-note choice event)
-  (set-frequency (hash-ref notes (send choice get-string-selection))))
-(define note (new choice% [label "♪ "]
-                          [choices '("A" "B" "C" "D" "E" "F" "G")]
-                          [parent control-pane]
-                          [callback set-note]))
+```scheme
+(define note-frame (tk 'create-widget 'frame))
+(define note (note-frame 'create-widget 'combobox 'width: 2 'values: '("A" "B" "C" "D" "E" "F" "G")))
+(tk/bind note '<<ComboboxSelected>> (lambda () (set-frequency (cadr (assoc (note 'get) notes)))))
+(define note-label (note-frame 'create-widget 'label 'text: "♪"))
+(tk/pack note-label note 'side: 'left 'padx: 2)
+(tk/grid note-frame 'row: 2 'column: 2 'padx: 20 'pady: 20)
 ```
 
 Finally, let's make some noise.
