@@ -157,7 +157,7 @@ function:
 
 ```scheme
 (define slider (tk 'create-widget 'scale 'from: *min-position* 'to: *max-position*))
-(slider 'set (frequency->position 440))
+(slider 'configure 'value: (frequency->position 440))
 ```
 
 Underneath the slider is a spin box showing the current frequency and buttons
@@ -197,33 +197,27 @@ wires the widget up to a function. If we add a command to the slider, that
 command will be called each time the slider is moved.
 
 ```scheme
-(define slider (tk 'create-widget 'scale 'from: *min-position* 'to: *max-position*))
-(slider 'set (frequency->position 440))
-(slider 'configure 'command: (lambda (x) (frequency-int 'set (position->frequency x))))
+(define slider (tk 'create-widget 'scale 'from: *min-position* 'to: *max-position*
+                   'command: (lambda (x) (frequency-int 'set (position->frequency x)))))
 ```
 
 The command for the slider takes one argument that indicates the new value of
-the slider. You can include the command as an option when you create the
-widget, but you can also add it later with `configure`. Here we add it later,
-because the command updates the spin box we create later. If the command were
-included when we created the widget, then when we `set` the initial value, it
-would trigger the command, but the spin box would not exist yet.
+the slider. Wire the buttons up to callback functions called `decrease-octave`
+and `increase-octave`. An [octave](https://en.wikipedia.org/wiki/Octave) is
+"the interval between one musical pitch and another with double its frequency."
 
-Wire the buttons up to callback functions called `decrease-octave` and
-`increase-octave`. An [octave](https://en.wikipedia.org/wiki/Octave) is "the
-interval between one musical pitch and another with double its frequency."
-
-```racket
+```scheme
 ; Set frequency slider and display
 (define (set-frequency freq)
-  (send slider set-value (frequency->position freq))
-  (send frequency-field set-value (~a freq)))
+  (when (and (>= freq *min-frequency*) (<= freq *max-frequency*))
+    (slider 'configure 'value: (frequency->position freq))
+    (frequency-int 'set freq)))
 
 ; Buttons increase and decrease frequency by one octave
 (define (adjust-octave modifier)
-  (set-frequency (* (string->number (send frequency-field get-value)) modifier)))
-(define (decrease-octave button event) (adjust-octave 0.5))
-(define (increase-octave button event) (adjust-octave 2))
+  (set-frequency (* (string->number (frequency-int 'get)) modifier)))
+(define (decrease-octave) (adjust-octave 0.5))
+(define (increase-octave) (adjust-octave 2))
 ```
 
 If you slide the slider, the text field updates accordingly. If you type a

@@ -42,12 +42,9 @@
 
 ; Set frequency slider and display
 (define (set-frequency freq)
-  ;(tk-with-lock (lambda ()
-    (print "button setting spin box to " freq)
-    (frequency-int 'set freq)
-    (print "button setting slider to " freq "->" (frequency->position freq))
-    ;(slider 'set (frequency->position freq))
-    (print "octave button complete"));))
+  (when (and (>= freq *min-frequency*) (<= freq *max-frequency*))
+    (slider 'configure 'value: (frequency->position freq))
+    (frequency-int 'set freq)))
 
 ; Buttons increase and decrease frequency by one octave
 (define (adjust-octave modifier)
@@ -55,12 +52,9 @@
 (define (decrease-octave) (adjust-octave 0.5))
 (define (increase-octave) (adjust-octave 2))
 
-(define slider (tk 'create-widget 'scale 'from: *min-position* 'to: *max-position*))
-(slider 'set (frequency->position 440))
-(slider 'configure 'command: (lambda (x)
-  (print "slider triggered on " x)
-  (frequency-int 'set (position->frequency x))
-  (print "slider callback complete")))
+(define slider (tk 'create-widget 'scale 'from: *min-position* 'to: *max-position*
+                   'command: (lambda (x) (frequency-int 'set (position->frequency x)))))
+(slider 'configure 'value: (frequency->position 440))
 (define lower-button (tk 'create-widget 'button 'text: "<" 'command: decrease-octave))
 (define-values (frequency-ext frequency-int)
   (units-spinbox *min-frequency* *max-frequency* 440 "Hz"))
