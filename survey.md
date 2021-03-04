@@ -37,7 +37,8 @@ to be able to make a reasonable assessment of each GUI library.
 
 ### Racket
 
-Links: [Tutorial](https://blog.matthewdmiller.net/learn-racket-by-example-gui-programming) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/racket)
+**Links:** [Tutorial](https://blog.matthewdmiller.net/learn-racket-by-example-gui-programming) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/racket)
+**Lisp Dialect:** Racket / **GUI Toolkit:** Native (GTK on Linux)
 
 <img align="right" width="320" height="205" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/racket-activitylog2.png" />
 
@@ -81,6 +82,7 @@ a declarative DSL.
 ### Cljfx
 
 Links: [Tutorial](https://blog.matthewdmiller.net/learn-clojure-by-example-javafx-gui-with-cljfx) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/cljfx)
+**Lisp Dialect:** Clojure / **GUI Toolkit:** JavaFX
 
 <img align="right" width="350" height="242" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/cljfx-defold-editor.png" />
 
@@ -127,9 +129,84 @@ as a calculator or note taking app.
 
 ## Other Options (listed alphabetically)
 
+Generally, choosing one of the above two recommended libraries is going to
+result in the smoothest development experience, but they aren't the only two
+ways to build a GUI with Lisp. Maybe you have special requirements or really
+want to use a Lisp other than Racket or Clojure.
+
+### EQL5
+
+Links: [Tutorial](https://blog.matthewdmiller.net/learn-common-lisp-by-example-qt-gui-with-eql5) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/eql5)
+**Lisp Dialect:** Common Lisp / **Common Lisp Implementation:** ECL / **GUI Toolkit:** Qt
+
+<img align="right" width="396" height="240" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/eql5-gym.png" />
+
+Qt is a widely-used cross-platform GUI toolkit, but most of my reservations
+about this library actually stem from Qt itself and not from the bindings to
+Common Lisp. Qt has a split personality: Qt Widgets and Qt Quick. EQL5 supports
+both. They primarily differ in how you define your UI. With Qt Widgets, you
+declare it procedurally. With Qt Quick, you use a declarative language called
+QML to define your UI. The underlying implementation of the widgets also
+differ.
+
+Qt Widgets has been around longer and has a broader range of available widgets.
+As an example, Qt Widgets has both a spin box and a double spin box that
+supports floating point numbers while Qt Quick only has the spin box which
+supports integers. I used Qt Quick when building my example, and it required a
+hack to get floating point numbers in the spin box since Qt Quick has no double
+spin box.
+
+Qt Widgets are more desktop-oriented without touch components and not easily
+adapted to touch. Qt Quick, on the other hand, has been developed from the
+beginning to work well on touch screens (tablets, smartphones, etc.). Qt Quick
+is sometimes criticized for having a foreign look on the desktop (neither Qt
+Quick or Qt Widgets use native widgets, but Qt Widgets look more native on the
+desktop). Qt Quick can by styled and comes with a few built-in styles to choose
+from including Fusion that offers a desktop-oriented look and feel. Creating
+your own style is no easy feat though. To create a new style, you have to
+provide alternate implementations of each widget with your styling using QML.
+If you need a custom look and feel for your app, you'd be better off with Cljfx
+since the look and feel of JavaFX can be customized much more easily with CSS.
+
+Qt is essentially maintaining two sets of widgets. It would make more sense to
+me if QML was just an alternative way of specifying which widgets to use
+instead of a completely new set of widgets, but I'm not a Qt maintainer or even
+a C++ developer. I guess creating new widgets was easier than adapting the old
+widgets to be touch friendly. It's my understanding that the initial plan was
+that Qt Quick would eventually replace Qt Widgets, but then Qt reversed that
+decision, and now they are stuck maintaining two sets of widgets. I find
+declarative ways to build GUIs a more natural fit for GUIs, so I consider it a
+shame Qt reversed their initial plan to eventually replace Qt Widgets with Qt
+Quick.
+
+The integration between Common Lisp and QML is not the smoothest. For your Lisp
+code to be able to interact with QML, it requires a Lisp source file with the
+functions to interact with QML. This file can be copied from the QML examples
+that come with EQL5, but I'm not sure why these functions aren't just built
+into EQL5. To call Lisp functions from QML, you use `Lisp.call()`, which is
+built into EQL5. It's not pretty (the function name must be quoted and the list
+comma separated), but it gets the job done. You can only pass Qt objects into
+QML, so to pass a value from Lisp into QML, you have to use the EQL5 bindings
+to build a Qt object of the correct type. It would be nice if most Common Lisp
+data types were automatically coerced into the appropriate C++ types like Cljfx
+does from Clojure to Java.
+
+The scope of this survey is limited to desktop GUI libraries, but there are
+ports of EQL5 to Android and iOS, and a work-in-progress port to Sailfish OS,
+so EQL5 can be used to develop mobile apps. QML being designed with touch
+screens in mind might be a great fit on mobile. EQL5 can also be embedded in
+existing C++ projects. I try to include a screenshot of an app developed with
+each library, but I couldn't find any apps developed with EQL5, so I reached
+out on Reddit, and the maintainer of EQL5 was nice enough to provide a
+screenshot of an app used by a gym that was developed with EQL5 and QML. If you
+really want to use Common Lisp instead of Racket or Clojure, EQL5 is a solid
+choice, but I'd still recommend Racket or Cljfx if you're starting a new
+project from scratch and can choose the language.
+
 ### LambdaNative
 
 Links: [Tutorial](https://blog.matthewdmiller.net/learn-lambdanative-by-example-desktop-gui) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/lambdanative)
+**Lisp Dialect:** Scheme / **Scheme Implementation:** Gambit / **GUI Toolkit:** Custom (rendered with OpenGL)
 
 <img align="right" width="480" height="320" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/lambdanative-phone-oximeter.jpg" />
 
