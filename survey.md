@@ -37,7 +37,7 @@ to be able to make a reasonable assessment of each GUI library.
 
 ### Racket
 
-**Links:** [Tutorial](https://blog.matthewdmiller.net/learn-racket-by-example-gui-programming) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/racket)
+**Links:** [Tutorial](https://blog.matthewdmiller.net/learn-racket-by-example-gui-programming) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/racket)<br>
 **Lisp Dialect:** Racket / **GUI Toolkit:** Native (GTK on Linux)
 
 <img align="right" width="320" height="205" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/racket-activitylog2.png" />
@@ -81,7 +81,7 @@ a declarative DSL.
 
 ### Cljfx
 
-Links: [Tutorial](https://blog.matthewdmiller.net/learn-clojure-by-example-javafx-gui-with-cljfx) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/cljfx)
+Links: [Tutorial](https://blog.matthewdmiller.net/learn-clojure-by-example-javafx-gui-with-cljfx) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/cljfx)<br>
 **Lisp Dialect:** Clojure / **GUI Toolkit:** JavaFX
 
 <img align="right" width="350" height="242" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/cljfx-defold-editor.png" />
@@ -136,7 +136,7 @@ want to use a Lisp other than Racket or Clojure.
 
 ### EQL5
 
-Links: [Tutorial](https://blog.matthewdmiller.net/learn-common-lisp-by-example-qt-gui-with-eql5) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/eql5)
+Links: [Tutorial](https://blog.matthewdmiller.net/learn-common-lisp-by-example-qt-gui-with-eql5) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/eql5)<br>
 **Lisp Dialect:** Common Lisp / **Common Lisp Implementation:** ECL / **GUI Toolkit:** Qt
 
 <img align="right" width="396" height="240" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/eql5-gym.png" />
@@ -161,7 +161,7 @@ adapted to touch. Qt Quick, on the other hand, has been developed from the
 beginning to work well on touch screens (tablets, smartphones, etc.). Qt Quick
 is sometimes criticized for having a foreign look on the desktop (neither Qt
 Quick or Qt Widgets use native widgets, but Qt Widgets look more native on the
-desktop). Qt Quick can by styled and comes with a few built-in styles to choose
+desktop). Qt Quick can be styled and comes with a few built-in styles to choose
 from including Fusion that offers a desktop-oriented look and feel. Creating
 your own style is no easy feat though. To create a new style, you have to
 provide alternate implementations of each widget with your styling using QML.
@@ -205,7 +205,7 @@ project from scratch and can choose the language.
 
 ### LambdaNative
 
-Links: [Tutorial](https://blog.matthewdmiller.net/learn-lambdanative-by-example-desktop-gui) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/lambdanative)
+Links: [Tutorial](https://blog.matthewdmiller.net/learn-lambdanative-by-example-desktop-gui) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/lambdanative)<br>
 **Lisp Dialect:** Scheme / **Scheme Implementation:** Gambit / **GUI Toolkit:** Custom (rendered with OpenGL)
 
 <img align="right" width="480" height="320" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/lambdanative-phone-oximeter.jpg" />
