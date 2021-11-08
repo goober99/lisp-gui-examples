@@ -50,8 +50,9 @@ your app to use Ttk or else it will end up looking like it was designed for a
 ```
 
 All PS/Tk function names begin with `tk/` or `tk-` (or `ttk/` and `ttk-` for
-the few Ttk-specific functions). The [doc directory] in the PS/Tk GitHub repo
-unfortunately has not been updated since this convention was adopted. One
+the few Ttk-specific functions). The [doc
+directory]https://github.com/utz82/pstk/tree/master/doc in the PS/Tk GitHub
+repo unfortunately has not been updated since this convention was adopted. One
 example from the docs is `start-tk` which is now `tk-start`.
 
 The `ttk-map-widgets` function is what tells Tk to use the Ttk widgets instead
