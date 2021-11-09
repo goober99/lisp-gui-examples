@@ -10,6 +10,7 @@
 
 (define *samples-per-buffer* 1024)
 (define *stream-frequency* 44100)
+(define +pi+ 3.141592)
 
 ; Initialize Allegro and audio addon
 (unless (al:init) (print "Could not initialize Allegro."))
@@ -35,13 +36,15 @@
           (if (not buf) (main-loop n) (begin
             (let ((adr (pointer->address buf)))
               (let loop ((i 0)
-                         (val 0)
-                         (pitch #x10000))
+                         (frequency 440))
                 (when (< i *samples-per-buffer*)
                   ; al:audio-stream-fragment returns a C pointer. Use (chicken
                   ; memory) module to operate on foreign pointer objects.
-                  (begin (pointer-f32-set! (address->pointer (+ adr (* i 32))) 42.0)
-                         (loop (+ i 1) (+ val pitch) (+ pitch 1)))))
+                  (begin (print n ":" i ":adr:" (+ adr (* i 32)) ":" (sin (* 2 +pi+ frequency (/ (+ (* *samples-per-buffer* n) i) *stream-frequency*))))
+                         (pointer-f32-set! (address->pointer (+ adr (* i 32)))
+                           (sin (* 2 +pi+ frequency (/ (+ (* *samples-per-buffer* n) i) *stream-frequency*))))
+                           (print "read back: " (pointer-f32-ref (address->pointer (+ adr (* i 32)))))
+                         (loop (+ i 1) 440))))
               (unless (al:audio-stream-fragment-set! stream buf)
                 (print "Error setting stream fragment")))
             ; Repeat
