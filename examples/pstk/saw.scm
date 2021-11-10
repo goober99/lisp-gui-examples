@@ -36,7 +36,8 @@
                 (when (< i *samples-per-buffer*)
                   ; al:audio-stream-fragment returns a C pointer. Use (chicken
                   ; memory) module to operate on foreign pointer objects.
-                  (begin (pointer-u8-set! (address->pointer (+ adr (* i 8)))
+                  ; Iterate over array one byte at a time since 8-bit depth.
+                  (begin (pointer-u8-set! (address->pointer (+ adr i))
                            (bitwise-and (arithmetic-shift val -16) 255))
                          (loop (+ i 1) (+ val pitch) (+ pitch 1)))))
               (unless (al:audio-stream-fragment-set! stream buf)
@@ -45,6 +46,4 @@
             (main-loop (- n 1)))))))))))
 
 (al:audio-stream-drain stream)
-;(al:free-event-queue! queue); Declared as finalizer by make-event-queue
-;(al:free-audio-stream! stream) ; Declared as finalizer by make-audio-stream
-;(al:audio-addon-uninstall) ; Caused error: corrupted size vs. prev_size
+(al:audio-addon-uninstall)

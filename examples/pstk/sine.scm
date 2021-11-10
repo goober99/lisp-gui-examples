@@ -1,6 +1,3 @@
-; Port of Allegro saw wave example from C to Chicken Scheme
-; https://github.com/liballeg/allegro5/blob/master/examples/ex_saw.c
-
 ; apt install liballegro5-dev
 ; chicken-install -sudo allegro
 
@@ -27,7 +24,7 @@
 (al:event-queue-register-source! queue (al:audio-stream-event-source stream))
 
 (let ((event (al:make-event)))
-  (let main-loop ((n 200))
+  (let main-loop ((n 100))
     ; Grab and handle events
     (when (and (> n 0) (al:event-queue-wait! queue event)
       (case (al:event-type event) ('audio-stream-fragment
@@ -40,10 +37,9 @@
                 (when (< i *samples-per-buffer*)
                   ; al:audio-stream-fragment returns a C pointer. Use (chicken
                   ; memory) module to operate on foreign pointer objects.
-                  (begin (print n ":" i ":adr:" (+ adr (* i 32)) ":" (sin (* 2 +pi+ frequency (/ (+ (* *samples-per-buffer* n) i) *stream-frequency*))))
-                         (pointer-f32-set! (address->pointer (+ adr (* i 32)))
+                  ; Iterate over array four bytes at a time since 32-bit depth.
+                  (begin (pointer-f32-set! (address->pointer (+ adr (* i 4)))
                            (sin (* 2 +pi+ frequency (/ (+ (* *samples-per-buffer* n) i) *stream-frequency*))))
-                           (print "read back: " (pointer-f32-ref (address->pointer (+ adr (* i 32)))))
                          (loop (+ i 1) 440))))
               (unless (al:audio-stream-fragment-set! stream buf)
                 (print "Error setting stream fragment")))
@@ -51,6 +47,4 @@
             (main-loop (- n 1)))))))))))
 
 (al:audio-stream-drain stream)
-;(al:free-event-queue! queue); Declared as finalizer by make-event-queue
-;(al:free-audio-stream! stream) ; Declared as finalizer by make-audio-stream
-;(al:audio-addon-uninstall) ; Caused error: corrupted size vs. prev_size
+(al:audio-addon-uninstall)
