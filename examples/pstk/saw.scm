@@ -24,7 +24,7 @@
 (let ((event (al:make-event)))
   (let main-loop ((n 200))
     ; Grab and handle events
-    (when (and (> n 0) (al:event-queue-wait! queue event)
+    (when (and (> n 0) (al:event-queue-wait! queue event))
       (case (al:event-type event) ('audio-stream-fragment
         (let ((buf (al:audio-stream-fragment stream)))
           ; If the stream is not ready for new data, buf will be null.
@@ -43,7 +43,7 @@
               (unless (al:audio-stream-fragment-set! stream buf)
                 (print "Error setting stream fragment")))
             ; Repeat
-            (main-loop (- n 1)))))))))))
+            (main-loop (- n 1))))))))))
 
 (al:audio-stream-drain stream)
 (al:audio-addon-uninstall)

@@ -3,11 +3,11 @@
 
 (import (prefix allegro "al:"))
 (import (chicken memory))
-(import (chicken bitwise))
 
 (define *samples-per-buffer* 1024)
 (define *stream-frequency* 44100)
 (define +pi+ 3.141592)
+(define duration 250)
 
 ; Initialize Allegro and audio addon
 (unless (al:init) (print "Could not initialize Allegro."))
@@ -24,27 +24,32 @@
 (al:event-queue-register-source! queue (al:audio-stream-event-source stream))
 
 (let ((event (al:make-event)))
-  (let main-loop ((n 100))
+  (let main-loop ((n 0))
     ; Grab and handle events
-    (when (and (> n 0) (al:event-queue-wait! queue event)
+    ; Replace hard coded number with calculation for duration
+    (when (and (< n (/ (* (/ duration 1000) *stream-frequency*) *samples-per-buffer*))
+               (al:event-queue-wait! queue event))
       (case (al:event-type event) ('audio-stream-fragment
         (let ((buf (al:audio-stream-fragment stream)))
           ; If the stream is not ready for new data, buf will be null.
           (if (not buf) (main-loop n) (begin
             (let ((adr (pointer->address buf)))
               (let loop ((i 0)
-                         (frequency 440))
+                         (frequency 440)
+                         (amplitude 0.5))
                 (when (< i *samples-per-buffer*)
-                  ; al:audio-stream-fragment returns a C pointer. Use (chicken
-                  ; memory) module to operate on foreign pointer objects.
-                  ; Iterate over array four bytes at a time since 32-bit depth.
-                  (begin (pointer-f32-set! (address->pointer (+ adr (* i 4)))
-                           (sin (* 2 +pi+ frequency (/ (+ (* *samples-per-buffer* n) i) *stream-frequency*))))
-                         (loop (+ i 1) 440))))
+                  (let ((time (/ (+ (* *samples-per-buffer* n) i) *stream-frequency*)))
+                    ; al:audio-stream-fragment returns a C pointer. Use (chicken
+                    ; memory) module to operate on foreign pointer objects.
+                    ; Iterate over array four bytes at a time since 32-bit depth.
+                    (pointer-f32-set! (address->pointer (+ adr (* i 4)))
+                      (* amplitude (sin (* 2 +pi+ frequency time))))
+                    (loop (+ i 1) 440 0.5))))
               (unless (al:audio-stream-fragment-set! stream buf)
                 (print "Error setting stream fragment")))
             ; Repeat
-            (main-loop (- n 1)))))))))))
+            (main-loop (+ n 1))))))))))
 
 (al:audio-stream-drain stream)
 (al:audio-addon-uninstall)
+(exit)
