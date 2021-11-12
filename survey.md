@@ -275,7 +275,7 @@ from it for desktop development.
 Links: [Tutorial](https://blog.matthewdmiller.net/) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/pstk)<br>
 **Lisp Dialect:** Scheme / **Scheme Implementation:** Chicken / **GUI Toolkit:** Tk
 
-<img align="right" width="300" height="240" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/pstk-bintracker.png" />
+<img align="right" width="320" height="256" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/pstk-bintracker.png" />
 
 While its egg form is specifically packaged for Chicken Scheme, PS/Tk actually
 stands for a portable Scheme interface to the Tk GUI toolkit. It has a rich
