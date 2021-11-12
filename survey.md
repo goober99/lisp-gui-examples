@@ -272,7 +272,7 @@ from it for desktop development.
 
 ### PS/Tk
 
-Links: [Tutorial](https://blog.matthewdmiller.net/) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/pstk)<br>
+Links: [Tutorial](https://blog.matthewdmiller.net/learn-scheme-by-example-tk-gui-with-chicken-scheme) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/pstk)<br>
 **Lisp Dialect:** Scheme / **Scheme Implementation:** Chicken / **GUI Toolkit:** Tk
 
 <img align="right" width="320" height="256" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/pstk-bintracker.png" />
@@ -314,7 +314,7 @@ should be portable to any implementation that is reasonably R5RS-compatible
 without too much effort. It interfaces with Tk, not with the C library
 bindings, but with a named pipe to `tclsh8.6`, and there is a configurable
 section that begins with the string `NON-PORTABLE` in comments. The file
-already comes with implementations for a dozen different Scheme implementations
-(like Bigloo, Gauche, and Kawa) that can just be uncommented. For a quick GUI
-for some utility you've written for your own use, Tk isn't that bad, but I
-wouldn't use it for anything other people were going to see.
+already comes with implementations for over a dozen different Scheme
+implementations (like Bigloo, Gauche, and Kawa) that can just be uncommented.
+For a quick GUI for some utility you've written for your own use, Tk isn't that
+bad, but I wouldn't use it for anything other people were going to see.

@@ -435,11 +435,12 @@ where *A* is amplitude, *f* is frequency, and *t* is time.
 (* amplitude (sin (* 2 +pi+ frequency time)))
 ```
 
-Wire this up to the play button, and you're ready to make some noise.
+Wire this up to a play button, and you're ready to make some noise.
 
 ```scheme
 (define play-button (tk 'create-widget 'button 'text: "Play" 'command: (lambda ()
   (generate-tone (string->number (frequency-int 'get)) (string->number (duration-int 'get))))))
+(tk/grid play-button 'row: 2 'column: 1 'padx: 20 'pady: 20)
 ```
 
 Tk has been around a long time, and it shows. While it is stable and highly
