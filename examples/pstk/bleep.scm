@@ -135,7 +135,7 @@
 
 (define-values (duration-ext duration-int) (units-spinbox 1 600000 200 "ms"))
 (define play-button (tk 'create-widget 'button 'text: "Play" 'command: (lambda ()
-  (generate-tone 440 250))))
+  (generate-tone (string->number (frequency-int 'get)) (string->number (duration-int 'get))))))
 (define note-frame (tk 'create-widget 'frame))
 (define note (note-frame 'create-widget 'combobox 'width: 2 'values: '("A" "B" "C" "D" "E" "F" "G")))
 (tk/bind note '<<ComboboxSelected>> (lambda () (set-frequency (cadr (assoc (note 'get) notes)))))

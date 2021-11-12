@@ -269,3 +269,52 @@ specify basic style parameters for each individual widget.
 
 I'm going to keep an eye on LambdaNative for mobile development but stay away
 from it for desktop development.
+
+### PS/Tk
+
+Links: [Tutorial](https://blog.matthewdmiller.net/) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/pstk)<br>
+**Lisp Dialect:** Scheme / **Scheme Implementation:** Chicken / **GUI Toolkit:** Tk
+
+<img align="right" width="300" height="240" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/pstk-bintracker.png" />
+
+While its egg form is specifically packaged for Chicken Scheme, PS/Tk actually
+stands for a portable Scheme interface to the Tk GUI toolkit. It has a rich
+history going all the way back to Scheme_wish by Sven Hartrumpf in 1997.
+Wolf-Dieter Busch created a Chicken port called Chicken/Tk in 2004. It took on
+its current name when Nils M Holm stripped it of Chicken-isms to make it
+portable amongst Scheme implementations in 2006.
+
+Tk also has a rich history as well. It has been around since 1991 and runs on a
+wide variety of platforms. It was originally developed as an extension to Tcl
+and is still developed alongside Tcl (thus why it is often referred to as
+Tcl/Tk). Given how easy it is to package Tk for other scripting languages such
+as Perl and Python, I can imagine an alternate reality where Tk is the dominant
+cross-platform GUI toolkit. Alas, we don't live in that world.
+
+One of the reasons for that is that Tk is just not all that pretty to look at.
+For many years Tk emulated the look and feel of Motif, the dominant look and
+feel of 1980s Unix workstations. It now has a theming engine. The default
+themes on Windows and macOS supposedly do a decent job of approximating the
+look of native widgets on those platforms. I don't use either of those
+platforms, so I can't verify this first hand. For some reason, the default
+theme on Linux is vaguely Windows 95ish. I tried a handful of themes that were
+supposed to imitate the look and feel of popular GTK and Qt themes. They each
+had glaring differences from the real thing that made them stick out like a
+sore thumb.
+
+The maintainer of the PS/Tk egg also develops a chiptune audio workstation
+called [Bintracker](https://bintracker.org/) that uses PS/Tk for its GUI. He
+went the path of developing a custom Tk theme just for Bintracker. That's a lot
+of work to go to if all you want are some basic widgets that look decent on
+your user's screen.
+
+If you really want a GUI for some obscure implementation of Scheme, [Holm's
+`pstk.scm`](http://mirror.informatimago.com/scheme/www.t3x.org/pstk/index.html)
+should be portable to any implementation that is reasonably R5RS-compatible
+without too much effort. It interfaces with Tk, not with the C library
+bindings, but with a named pipe to `tclsh8.6`, and there is a configurable
+section that begins with the string `NON-PORTABLE` in comments. The file
+already comes with implementations for a dozen different Scheme implementations
+(like Bigloo, Gauche, and Kawa) that can just be uncommented. For a quick GUI
+for some utility you've written for your own use, Tk isn't that bad, but I
+wouldn't use it for anything other people were going to see.

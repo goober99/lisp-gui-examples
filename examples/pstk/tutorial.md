@@ -15,7 +15,7 @@ Chicken-specific extenstion libraries that are stored in a centralized
 repository (like CPAN but for Chicken Scheme). Instead of building yet another
 calculator, let's build a GUI for generating a tone.
 
-![Screenshot](../../screenshots/racket.png?raw=true "Example screenshot")
+![Screenshot](../../screenshots/pstk.png?raw=true "Example screenshot")
 
 You'll need Chicken installed. It's available in the repositories of most Linux
 distros. PS/Tk interfaces with Tk, not with C library bindings, but with a
@@ -355,11 +355,12 @@ marked as "archived by the owner" and read-only on GitHub. I've included the
 example in the repo alongside the rest of the code for this tutorial in case
 someone finds it useful.
 
-Allegro is pretty low-level. You create an audio `stream`. In this case, the stream
-buffers eight fragments of 1,024 samples each at a frequency (often called sampling rate)
-of 44,100 Hz (the sampling rate of an audio CD), which means there are 44,100 samples
-per second. Each sample is a 32-bit float (what is called the bit depth of the audio), and we
-only have one channel to keep things as simple as possible.
+Allegro is very low-level. You create an audio `stream`. In this case, the
+stream buffers eight fragments of 1,024 samples each at a frequency (often
+called sampling rate) of 44,100 Hz (the sampling rate of an audio CD), which
+means there are 44,100 samples per second. Each sample is a 32-bit float (what
+is called the bit depth of the audio), and we only have one channel to keep
+things as simple as possible.
 
 ```scheme
 ; Generate a tone using Allegro
@@ -396,7 +397,7 @@ above, this is done by `fill-buffer`. That was just a placeholder, so I could
 break the code up into shorter, more easily explainable chunks. This is what
 goes in the place of `(fill-buffer buffer n)`:
 
-````scheme
+```scheme
 (let ((adr (pointer->address buffer)))
   (let loop ((i 0))
     (when (< i samples-per-buffer)
@@ -409,30 +410,41 @@ goes in the place of `(fill-buffer buffer n)`:
         (loop (+ i 1)))))
   (unless (al:audio-stream-fragment-set! stream buffer)
     (print "Error setting stream fragment")))
-````
-
-The [basic formula for a sine
-wave](http://pld.cs.luc.edu/telecom/mnotes/digitized_sound.html) is A sin(2πft)
-where *A* is amplitude, *f* is frequency, and *t* is time. We need a way to
-pass the frequency from our slider in the Scheme to the output hook in the C.
-Gambit scheme has a `c-lambda` special form that makes it possible to create a
-Scheme function that is a representative of a C function or code sequence.
-
-When playing a note such as B4 (493.88 Hz) that has a decimal point, the type
-passed from Scheme to C lines up with the C type `float`, but when passing an
-integer (such as 440), it will cause an error. The `exact->inexact` conversion
-forces Scheme to pass the value along as a `float`. Wire this up to the play
-button, and you're ready to make some noise.
-
-```scheme
-(set! play-button (glgui-button-string gui 230 125 80 50 "Play" ascii_25.fnt generate-tone))
 ```
 
-LambdaNative has a lot of rough edges, not least of which is the documentation
-(or lack thereof). Looking at the source code for a widget seems to be the only
-way to determine all the parameters available for that widget. If you're like
-me, being able to write mobile apps in Lisp is a dream come true! LambdaNative
-may not be the smoothest development experience right now, but I hope to
-revisit it again in the future. It is being actively developed (and has the
-backing of a university research team), so my hopes are high for the future of
-LambdaNative.
+The Allegro egg is a pretty thin wrapper of the Allegro library. The
+`audio-stream-fragment` procedure in the egg just passes along the C pointer
+that the corresponding `al_get_audio_stream_fragment` function from the C
+library returns. It would have been nice if the egg had offered some Scheme
+conveniences atop Allegro like allowing us to pass a Scheme list or array to
+Allegro to provide the buffer of samples. Since it doesn't, we'll use the
+chicken memory module to fill the C array starting at the C pointer returned by
+`audio-stream-fragment`. We use `pointer->address` to get the address of the
+pointer. A pointer refrences a byte of memory. We can reference the preceding
+or following byte by subtracting or adding 1 to the address. Since we are
+filling the array with 32-bit floats, and 32 bits is 4 bytes, we want to
+increment the address by 4 each time. Then we can set the value of the current
+location with pointer-f32-set!.
+
+Then you just need to feed Allegro buffers of 1,024 samples at a time. The
+[basic formula for a sine
+wave](http://pld.cs.luc.edu/telecom/mnotes/digitized_sound.html) is A sin(2πft)
+where *A* is amplitude, *f* is frequency, and *t* is time.
+
+```scheme
+(* amplitude (sin (* 2 +pi+ frequency time)))
+```
+
+Wire this up to the play button, and you're ready to make some noise.
+
+```scheme
+(define play-button (tk 'create-widget 'button 'text: "Play" 'command: (lambda ()
+  (generate-tone (string->number (frequency-int 'get)) (string->number (duration-int 'get))))))
+```
+
+Tk has been around a long time, and it shows. While it is stable and highly
+portable, even with recent improvements, it just looks a little dated. At least
+on Linux, none of the themes I tried really fit in. There were always
+differences that made the Tk GUI stick out like a sore thumb. If you're
+building an internal tool where it doesn't really matter how pretty it is, you
+can get Tk to work with a variety of Schemes in a variety of places.

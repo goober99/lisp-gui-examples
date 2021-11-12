@@ -78,6 +78,40 @@ $ make
 $ make install
 ```
 
+### PS/Tk (Chicken Scheme/Tk)
+
+![Screenshot](screenshots/pstk.png?raw=true "PS/Tk screenshot")
+
+Chicken Scheme, Tcl/Tk, and Allegro are available in the repository of most
+Linux distros. Install it from your distro's repo. For Debian/Ubuntu:
+
+```console
+$ apt install chicken-bin tcl tk liballegro5-dev
+```
+
+Optionally on Linux, you can install additional Tk themes and apply the theme
+of your choice system wide. With MATE on Debian, I prefer Arc (the screenshot
+above is with the Arc theme). KDE users might prefer Breeze while Ubuntu users
+might opt for Yaru.
+
+```console
+$ sudo apt install tcl-ttkthemes
+$ echo '*TkTheme: arc' | xrdb -merge -
+```
+
+The example uses the Allegro egg to generate the tone. You can install it and
+the PS/Tk egg with the `chicken-install` utility that comes with Chicken
+Scheme.
+
+Navigate to the `pstk` example subdirectory and execute bleep.scm with Chicken
+Scheme.
+
+```console
+$ chicken-install -sudo pstk allegro
+$ cd pstk
+$ csi bleep.scm
+```
+
 ### Racket
 
 ![Screenshot](screenshots/racket.png?raw=true "Racket screenshot")
