@@ -1,6 +1,3 @@
-; apt install liballegro5-dev
-; chicken-install -sudo allegro
-
 (import (prefix allegro "al:"))
 (import (chicken memory))
 

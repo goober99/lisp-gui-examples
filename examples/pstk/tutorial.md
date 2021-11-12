@@ -320,29 +320,119 @@ using the `set-frequency` helper function we created for the octave buttons.
 (tk/grid note-frame 'row: 2 'column: 2 'padx: 20 'pady: 20)
 ```
 
-Finally, let's make some noise.
+Now, let's make some noise. There are Chicken Scheme
+http://wiki.call-cc.org/eggref/5/allegro[bindings] to the
+https://en.wikipedia.org/wiki/Allegro_(software_library)[Allegro] library.
+Allegro is a library primarily used by games for cross-platform graphics, input
+devices, and more. What we're interested in is the audio addon that can be used
+to generate a tone with a sine wave. You'll need to install the Allegro
+library. Make sure you also install the header files. In some Linux distros,
+these are split into a separate package (e.g. `liballegro5-dev` on Debian).
+Also, install the Allegro egg (`chicken-install -sudo allegro`). I added the
+following lines near the top to import the Allegro bindings (and the chicken
+memory module, which we'll also use) and initialize Allegro.
 
-```racket
-(require rsound)
+````scheme
+(import (prefix allegro "al:"))
+(import (chicken memory))
 
-; Generate a tone using RSound
-; Explicitly set RSound sample rate in case differs by platform/version
-(default-sample-rate 44100)
-(define (generate-tone button event)
-  (play (make-tone (string->number (send frequency-field get-value))
-                   0.5
-                   ; Duration in samples at sample rate of 44.1 kHz
-                   (inexact->exact (* 44.1 (string->number (send duration-field get-value)))))))
+(define +pi+ 3.141592)
+
+; Initialize Allegro and audio addon
+(unless (al:init) (print "Could not initialize Allegro."))
+(unless (al:audio-addon-install) (print "Could not initialize sound."))
+(al:reserve-samples 0)
+````
+
+The Allegro egg is accompanied by a couple of examples but no examples showing
+the use of the audio addon. The Allegro library itself comes with an
+https://github.com/liballeg/allegro5/blob/master/examples/ex_saw.c[example
+showing how to generate a saw wave], but being a C library, the example is, of
+course, in C. I
+https://github.com/goober99/lisp-gui-examples/blob/master/examples/pstk/saw.scm[ported
+that example to Scheme]. I would have contributed the example back to the
+Allegro egg, but the repo is marked as "archived by the owner" and read-only on
+GitHub. I've included the example in the repo alongside the rest of the code
+for this tutorial in case someone finds it useful.
+
+Allegro is pretty low-level. You create an audio `stream`. In this case, the stream
+buffers eight fragments of 1,024 samples each at a frequency (often called sampling rate)
+of 44,100 Hz (the sampling rate of an audio CD), which means there are 44,100 samples
+per second. Each sample is a 32-bit float (what is called the bit depth of the audio), and we
+only have one channel to keep things as simple as possible.
+
+```scheme
+; Generate a tone using Allegro
+(define (generate-tone frequency duration)
+  (let* ((samples-per-buffer 1024)
+         (stream-frequency 44100)
+         (amplitude 0.5)
+         (stream (al:make-audio-stream 8 samples-per-buffer stream-frequency 'float32 'one))
+         (queue (al:make-event-queue))
+         (event (al:make-event)))
+
+    (unless (al:audio-stream-attach-to-mixer! stream (al:default-mixer))
+      (print "Could not attach stream to mixer."))
+    (al:event-queue-register-source! queue (al:audio-stream-event-source stream))
+
+    (let event-loop ((n 0))
+      ; Grab and handle events
+      (when (and (< n (/ (* (/ duration 1000) stream-frequency) samples-per-buffer))
+                 (al:event-queue-wait! queue event))
+        (case (al:event-type event) ('audio-stream-fragment
+          (let ((buffer (al:audio-stream-fragment stream)))
+            ; If the stream is not ready for new data, buffer will be null.
+            (if (not buffer) (event-loop n) (begin
+              (fill-buffer buffer n) ; Placeholder
+              ; Repeat
+              (event-loop (+ n 1)))))))))
+
+    (al:audio-stream-drain stream)))
 ```
 
-We'll use the Racket [RSound](https://docs.racket-lang.org/rsound/index.html)
-package to generate the tone. This package isn't bundled with Racket, but you
-can install it with the `raco` utility that comes with Racket (`raco pkg
-install rsound`). Wire this up to a button between the duration and note
-selector, and you're ready to make some noise.
+An event loop waits for the audio stream to ask for another buffer. Our job is
+to fill that buffer with 1,024 32-bit floats at a time. In the code listing
+above, this is done by `fill-buffer`. That was just a placeholder, so I could
+break the code up into shorter, more easily explainable chunks. This is what
+goes in the place of `(fill-buffer buffer n)`:
 
-```racket
-(define play-button (new button% [parent control-pane]
-                                 [label "Play"]
-                                 [callback generate-tone]))
+````scheme
+(let ((adr (pointer->address buffer)))
+  (let loop ((i 0))
+    (when (< i samples-per-buffer)
+      (let ((time (/ (+ (* samples-per-buffer n) i) stream-frequency)))
+        ; al:audio-stream-fragment returns a C pointer. Use (chicken
+        ; memory) module to operate on foreign pointer objects.
+        ; Iterate over array four bytes at a time since 32-bit depth.
+        (pointer-f32-set! (address->pointer (+ adr (* i 4)))
+          (* amplitude (sin (* 2 +pi+ frequency time))))
+        (loop (+ i 1)))))
+  (unless (al:audio-stream-fragment-set! stream buffer)
+    (print "Error setting stream fragment")))
+````
+
+The [basic formula for a sine
+wave](http://pld.cs.luc.edu/telecom/mnotes/digitized_sound.html) is A sin(2πft)
+where *A* is amplitude, *f* is frequency, and *t* is time. We need a way to
+pass the frequency from our slider in the Scheme to the output hook in the C.
+Gambit scheme has a `c-lambda` special form that makes it possible to create a
+Scheme function that is a representative of a C function or code sequence.
+
+When playing a note such as B4 (493.88 Hz) that has a decimal point, the type
+passed from Scheme to C lines up with the C type `float`, but when passing an
+integer (such as 440), it will cause an error. The `exact->inexact` conversion
+forces Scheme to pass the value along as a `float`. Wire this up to the play
+button, and you're ready to make some noise.
+
+```scheme
+(set! play-button (glgui-button-string gui 230 125 80 50 "Play" ascii_25.fnt generate-tone))
 ```
+
+LambdaNative has a lot of rough edges, not least of which is the documentation
+(or lack thereof). Looking at the source code for a widget seems to be the only
+way to determine all the parameters available for that widget. If you're like
+me, being able to write mobile apps in Lisp is a dream come true! LambdaNative
+may not be the smoothest development experience right now, but I hope to
+revisit it again in the future. It is being actively developed (and has the
+backing of a university research team), so my hopes are high for the future of
+LambdaNative.
