@@ -321,8 +321,8 @@ using the `set-frequency` helper function we created for the octave buttons.
 ```
 
 Now, let's make some noise. There are Chicken Scheme
-http://wiki.call-cc.org/eggref/5/allegro[bindings] to the
-https://en.wikipedia.org/wiki/Allegro_(software_library)[Allegro] library.
+[bindings](http://wiki.call-cc.org/eggref/5/allegro) to the
+[Allegro](https://en.wikipedia.org/wiki/Allegro_(software_library)) library.
 Allegro is a library primarily used by games for cross-platform graphics, input
 devices, and more. What we're interested in is the audio addon that can be used
 to generate a tone with a sine wave. You'll need to install the Allegro
@@ -345,15 +345,15 @@ memory module, which we'll also use) and initialize Allegro.
 ````
 
 The Allegro egg is accompanied by a couple of examples but no examples showing
-the use of the audio addon. The Allegro library itself comes with an
-https://github.com/liballeg/allegro5/blob/master/examples/ex_saw.c[example
-showing how to generate a saw wave], but being a C library, the example is, of
-course, in C. I
-https://github.com/goober99/lisp-gui-examples/blob/master/examples/pstk/saw.scm[ported
-that example to Scheme]. I would have contributed the example back to the
-Allegro egg, but the repo is marked as "archived by the owner" and read-only on
-GitHub. I've included the example in the repo alongside the rest of the code
-for this tutorial in case someone finds it useful.
+the use of the audio addon. The Allegro library itself comes with an [example
+showing how to generate a saw
+wave](https://github.com/liballeg/allegro5/blob/master/examples/ex_saw.c), but
+being a C library, the example is, of course, in C. I [ported that example to
+Scheme](https://github.com/goober99/lisp-gui-examples/blob/master/examples/pstk/saw.scm).
+I would have contributed the example back to the Allegro egg, but the repo is
+marked as "archived by the owner" and read-only on GitHub. I've included the
+example in the repo alongside the rest of the code for this tutorial in case
+someone finds it useful.
 
 Allegro is pretty low-level. You create an audio `stream`. In this case, the stream
 buffers eight fragments of 1,024 samples each at a frequency (often called sampling rate)
