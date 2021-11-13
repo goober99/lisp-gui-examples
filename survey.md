@@ -321,7 +321,7 @@ For a quick GUI for some utility you've written for your own use, Tk isn't that
 bad, but I wouldn't use it for anything other people were going to see.
 
 As a testament to its portability, there are also two Tk bindings for Common
-Lisp: [LTK](http://www.peter-herth.de/ltk/)) and
+Lisp: [LTK](http://www.peter-herth.de/ltk/) and
 [nodgui](https://www.autistici.org/interzona/nodgui.html). Both interface with
 Tk over `wish` similar to how PS/Tk uses `tclsh` instead of C bindings. Tk can
 probably run on more Lisp implementations and platforms than any other GUI
