@@ -270,10 +270,11 @@ specify basic style parameters for each individual widget.
 I'm going to keep an eye on LambdaNative for mobile development but stay away
 from it for desktop development.
 
-### PS/Tk
+### Tk
 
 Links: [Tutorial](https://blog.matthewdmiller.net/learn-scheme-by-example-tk-gui-with-chicken-scheme) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/pstk)<br>
-**Lisp Dialect:** Scheme / **Scheme Implementation:** Chicken / **GUI Toolkit:** Tk
+**Lisp Dialect:** Scheme / **Scheme Implementation:** Chicken (and most other R5RS-compatible implementations) / **Bindings:** PS/Tk<br>
+**Lisp Dialect:** Common Lisp / **Bindings:** LTK and nodgui
 
 <img align="right" width="320" height="256" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/pstk-bintracker.png" />
 
@@ -318,3 +319,13 @@ already comes with implementations for over a dozen different Scheme
 implementations (like Bigloo, Gauche, and Kawa) that can just be uncommented.
 For a quick GUI for some utility you've written for your own use, Tk isn't that
 bad, but I wouldn't use it for anything other people were going to see.
+
+As a testament to its portability, there are also two Tk bindings for Common
+Lisp: [LTK](http://www.peter-herth.de/ltk/)) and
+[nodgui](https://www.autistici.org/interzona/nodgui.html). Both interface with
+Tk over `wish` similar to how PS/Tk uses `tclsh` instead of C bindings. Tk can
+probably run on more Lisp implementations and platforms than any other GUI
+toolkit, but the fact remains that it's just not that nice to look at. I didn't
+build examples using either of the Common Lisp bindings, because all my
+complaints about Tk would remain regardless of whether using Scheme or Common
+Lisp.
