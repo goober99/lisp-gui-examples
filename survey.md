@@ -278,19 +278,28 @@ Links: [Tutorial](https://blog.matthewdmiller.net/learn-scheme-by-example-tk-gui
 
 <img align="right" width="320" height="256" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/pstk-bintracker.png" />
 
-While its egg form is specifically packaged for Chicken Scheme, PS/Tk actually
-stands for a portable Scheme interface to the Tk GUI toolkit. It has a rich
-history going all the way back to Scheme_wish by Sven Hartrumpf in 1997.
-Wolf-Dieter Busch created a Chicken port called Chicken/Tk in 2004. It took on
-its current name when Nils M Holm stripped it of Chicken-isms to make it
-portable amongst Scheme implementations in 2006.
+While its egg form is specifically packaged for Chicken Scheme, Tk can probably
+run on more Lisp implementations and platforms than any other GUI toolkit.
+PS/Tk actually stands for a portable Scheme interface to the Tk GUI toolkit. It
+has a rich history going all the way back to Scheme_wish by Sven Hartrumpf in
+1997. Wolf-Dieter Busch created a Chicken port called Chicken/Tk in 2004. It
+took on its current name when Nils M Holm stripped it of Chicken-isms to make
+it portable amongst Scheme implementations in 2006.
 
-Tk also has a rich history as well. It has been around since 1991 and runs on a
-wide variety of platforms. It was originally developed as an extension to Tcl
-and is still developed alongside Tcl (thus why it is often referred to as
-Tcl/Tk). Given how easy it is to package Tk for other scripting languages such
-as Perl and Python, I can imagine an alternate reality where Tk is the dominant
-cross-platform GUI toolkit. Alas, we don't live in that world.
+There are two Tk bindings for Common Lisp:
+[LTK](http://www.peter-herth.de/ltk/) and
+[nodgui](https://www.autistici.org/interzona/nodgui.html). Both interface with
+Tk over `wish` similar to how PS/Tk uses `tclsh` instead of C bindings. I
+didn't build examples using either of the Common Lisp bindings because of the
+similarities of the implementations, plus all my complaints about Tk would
+remain regardless of whether using Scheme or Common Lisp.
+
+Tk has a rich history. It has been around since 1991 and runs on a wide variety
+of platforms. It was originally developed as an extension to Tcl and is still
+developed alongside Tcl (thus why it is often referred to as Tcl/Tk). Given how
+easy it is to package Tk for other scripting languages such as Perl and Python,
+I can imagine an alternate reality where Tk is the dominant cross-platform GUI
+toolkit. Alas, we don't live in that world.
 
 One of the reasons for that is that Tk is just not all that pretty to look at.
 For many years Tk emulated the look and feel of Motif, the dominant look and
@@ -319,13 +328,3 @@ already comes with implementations for over a dozen different Scheme
 implementations (like Bigloo, Gauche, and Kawa) that can just be uncommented.
 For a quick GUI for some utility you've written for your own use, Tk isn't that
 bad, but I wouldn't use it for anything other people were going to see.
-
-As a testament to its portability, there are also two Tk bindings for Common
-Lisp: [LTK](http://www.peter-herth.de/ltk/) and
-[nodgui](https://www.autistici.org/interzona/nodgui.html). Both interface with
-Tk over `wish` similar to how PS/Tk uses `tclsh` instead of C bindings. Tk can
-probably run on more Lisp implementations and platforms than any other GUI
-toolkit, but the fact remains that it's just not that nice to look at. I didn't
-build examples using either of the Common Lisp bindings, because all my
-complaints about Tk would remain regardless of whether using Scheme or Common
-Lisp.
