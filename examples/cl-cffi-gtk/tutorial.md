@@ -24,53 +24,69 @@ $ sbcl --load quicklisp.lisp
 > (ql:add-to-init-file)
 ```
 
-```racket
+The "proper" way to include a dependency would be to use
+[ASDF](https://common-lisp.net/project/asdf/) and create a `.asd` file for the
+project. Since this is a quick tutorial, I'll use with `ql:quickload`.
+
+```lisp
 (ql:quickload :cl-cffi-gtk)
 
-(defpackage :bleep
-  (:use :gtk :gobject :common-lisp))
-
-(in-package :bleep)
 ```
 
 The first time you run `bleep.lisp`, it will take awhile as Quicklisp downloads
-cl-cffi-gtk (by default it will be downloaded to `~/quicklisp`). The "proper"
-way to include this dependency would be to use
-[ASDF](https://common-lisp.net/project/asdf/) and create a `.asd` file for the
-project. Since this is a quick tutorial, I'll stick with `ql:quickload`.
+cl-cffi-gtk (by default it will be downloaded to `~/quicklisp`).
 
-```racket
+```lisp
 ; Main window
-(define frame (new frame% [label "Bleep"]))
+(defvar window (make-instance 'gtk:gtk-window :type :toplevel
+                                              :title "Bleep"))
 
-; Display GUI
-(send frame show #t)
+(gtk:within-main-loop
+  ; Quit program when window closed
+  (gobject:g-signal-connect window "destroy" (lambda (widget)
+    (declare (ignore widget))
+    (gtk:leave-gtk-main)))
+  ; Display GUI
+  (gtk:gtk-widget-show-all window))
 ```
 
-Racket's GUI library is object oriented. You create a window by instantiating
-the `frame%` class. Identifiers ending with a percent is Racket's naming
-convention for classes. You show the window by calling its `show` method. Now
-let's add some additional widgets between creating the window and showing it.
+Although written in C, GTK is object oriented. It uses a portable object system
+called GObject. GObject classes are wrapped with corresponding Lisp classes.
+You create a window by instantiating the `gtk:gtk-window` class. The
+`gtk:within-main-loop` macro does the work of setting up a GTK main loop, and
+the `gtk:gtk-widget-show-all` function shows the window and all its child
+widgets. Now let's add some widgets to the window.
 
-```racket
-(define slider (new slider% [label #f]
-                            [min-value 20]
-                            [max-value 20000]
-                            [parent frame]
-                            [init-value 440]
-                            [style '(horizontal plain)]
-                            [vert-margin 25]
-                            [horiz-margin 10]))
+```lisp
+(defvar frequency (make-instance 'gtk:gtk-adjustment :value 440
+                                                     :lower 20
+                                                     :upper 20000
+                                                     :step-increment 1))
+(defvar slider (make-instance 'gtk:gtk-scale :orientation :horizontal
+                                             :draw-value nil
+                                             :width-request 200
+                                             :adjustment frequency
+                                             :margin 25))
+(gtk:gtk-container-add window slider)
 ```
+
+Scale widgets must be associated with an adjustment object. An adjustment
+object represents a value with an upper and lower bound. This has the added
+benefit that multiple widgets can be associated with the same value. We will
+take advantage of this later on in the tutorial when we associate the spin
+button for frequency with the same adjustment object used by the slider.
+
+Just creating a widget doesn't make it appear on screen. You need to pack it
+into the window. You can use `gtk-container-add` to do just that.
 
 The range of frequencies audible by humans is typically between 20 Hz and 20
 KHz (we lose the ability to hear some of those higher frequencies as we age).
 The [musical note A above middle
 C](https://en.wikipedia.org/wiki/A440_(pitch_standard)) is 440 Hz. Since A4
 serves as a general tuning standard, it seems like a sensible default, but if
-you run the above in Racket, this is what you'll see:
+you run the above in SBCL, this is what you'll see:
 
-![Slider](../../screenshots/racket-linearslider.png?raw=true "Slider showing 440 using a linear scale")
+![Slider](../../screenshots/clcffigtk-linearslider.png?raw=true "Slider showing 440 using a linear scale")
 
 The scale of 20 to 20,000 is so large that 440 doesn't appear to move the
 slider at all. Ideally, 440 would fall about the middle of the slider. To
@@ -79,9 +95,9 @@ achieve this, let's use a logarithmic scale.
 I found a [Stack Overflow
 answer](https://stackoverflow.com/questions/846221/logarithmic-slider/846249#846249)
 on how to map a slider to a logarithmic scale. The code given in the answer is
-JavaScript, but it was easy enough to port to Racket.
+JavaScript, but it was easy enough to port to Common Lisp.
 
-```racket
+```lisp
 ; Scale used by slider
 (define *min-position* 0)
 (define *max-position* 2000)
@@ -113,18 +129,14 @@ with just the slider.
 Then we create two functions: one that takes the position on the slider and
 returns the frequency (`position->frequency`) and another that takes a
 frequency and returns the position on the slider (`frequency-position`). Now
-let's modify our `slider%` to use `frequency->position` to convert the
-`init-value` to a slider position using our logarithmic scale.
+let's modify our adjustment object to use `frequency->position` to convert the
+initial `value` to a slider position using our logarithmic scale.
 
-```racket
-(define slider (new slider% [label #f]
-                            [min-value *min-position*]
-                            [max-value *max-position*]
-                            [parent frame]
-                            [init-value (frequency->position 440)]
-                            [style '(horizontal plain)]
-                            [vert-margin 25]
-                            [horiz-margin 10]))
+```lisp
+(defvar frequency (make-instance 'gtk:gtk-adjustment :value (frequency->position 440)
+                                                     :lower *min-position*
+                                                     :upper *max-position*
+                                                     :step-increment 1))
 ```
 
 Underneath the slider is a text field showing the current frequency and buttons
