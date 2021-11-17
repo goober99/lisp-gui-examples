@@ -5,9 +5,10 @@
 
 (in-package :bleep)
 
+(defvar window (gtk-window-new :toplevel))
+
 (within-main-loop
-  (let ((window (gtk-window-new :toplevel)))
-    (g-signal-connect window "destroy" (lambda (widget)
-      (declare (ignore widget))
-      (leave-gtk-main)))
-    (gtk-widget-show-all window)))
+  (g-signal-connect window "destroy" (lambda (widget)
+    (declare (ignore widget))
+    (leave-gtk-main)))
+  (gtk-widget-show-all window))
