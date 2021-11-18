@@ -38,8 +38,10 @@ cl-cffi-gtk (by default it will be downloaded to `~/quicklisp`).
 
 ```lisp
 ; Main window
-(defvar window (make-instance 'gtk:gtk-window :type :toplevel
-                                              :title "Bleep"))
+(defvar window (make-instance 'gtk:gtk-window :type :toplevel :title "Bleep"))
+(defvar vbox (make-instance 'gtk:gtk-box :orientation :vertical
+                                                      :spacing 25
+                                                      :margin 25))
 
 (gtk:within-main-loop
   ; Quit program when window closed
@@ -47,37 +49,42 @@ cl-cffi-gtk (by default it will be downloaded to `~/quicklisp`).
     (declare (ignore widget))
     (gtk:leave-gtk-main)))
   ; Display GUI
+  (gtk:gtk-container-add window vbox)
   (gtk:gtk-widget-show-all window))
 ```
 
 Although written in C, GTK is object oriented. It uses a portable object system
 called GObject. GObject classes are wrapped with corresponding Lisp classes.
-You create a window by instantiating the `gtk:gtk-window` class. The
-`gtk:within-main-loop` macro does the work of setting up a GTK main loop, and
-the `gtk:gtk-widget-show-all` function shows the window and all its child
-widgets. Now let's add some widgets to the window.
+You create a window by instantiating the `gtk:gtk-window` class.
+
+The `gtk:gtk-box` is a packing widget. A `gtk:gtk-window` can only contain one
+widget at a time. Packing widgets are you used to pack widgets together and
+arrange them.
+
+The `gtk:within-main-loop` macro does the work of setting up a GTK main loop.
+The macro does some additional bookkeeping to run the GUI in a separate thread.
+This is cool, because even after the window appears, you can still type
+commands into the REPL to interact with the program (e.g. query the properties
+of a widget). With most of the Lisp GUI libraries I've tried out, the GUI takes
+over completely once it is launched, and you have to close the window before
+being able to type commands into the REPL again.
+
+Then add our packing widget to the window, and we're ready to launch our
+window. Now let's add some more widgets to it.
 
 ```lisp
-(defvar frequency (make-instance 'gtk:gtk-adjustment :value 440
-                                                     :lower 20
-                                                     :upper 20000
-                                                     :step-increment 1))
-(defvar slider (make-instance 'gtk:gtk-scale :orientation :horizontal
-                                             :draw-value nil
-                                             :width-request 200
-                                             :adjustment frequency
-                                             :margin 25))
-(gtk:gtk-container-add window slider)
+(defvar slider (make-instance 'gtk:gtk-scale
+                              :orientation :horizontal
+                              :draw-value nil
+                              :width-request 200
+                              :adjustment
+                              (make-instance 'gtk:gtk-adjustment
+                                             :value 440
+                                             :lower 20
+                                             :upper 20000
+                                             :step-increment 1)))
+(gtk:gtk-box-pack-start vbox slider)
 ```
-
-Scale widgets must be associated with an adjustment object. An adjustment
-object represents a value with an upper and lower bound. This has the added
-benefit that multiple widgets can be associated with the same value. We will
-take advantage of this later on in the tutorial when we associate the spin
-button for frequency with the same adjustment object used by the slider.
-
-Just creating a widget doesn't make it appear on screen. You need to pack it
-into the window. You can use `gtk-container-add` to do just that.
 
 The range of frequencies audible by humans is typically between 20 Hz and 20
 KHz (we lose the ability to hear some of those higher frequencies as we age).
@@ -129,132 +136,102 @@ with just the slider.
 Then we create two functions: one that takes the position on the slider and
 returns the frequency (`position->frequency`) and another that takes a
 frequency and returns the position on the slider (`frequency-position`). Now
-let's modify our adjustment object to use `frequency->position` to convert the
-initial `value` to a slider position using our logarithmic scale.
+let's modify our slider to use `frequency->position` to convert the initial
+`value` to a slider position using our logarithmic scale.
 
 ```lisp
-(defvar frequency (make-instance 'gtk:gtk-adjustment :value (frequency->position 440)
-                                                     :lower *min-position*
-                                                     :upper *max-position*
-                                                     :step-increment 1))
+(defvar slider (make-instance 'gtk:gtk-scale
+                              :orientation :horizontal
+                              :draw-value nil
+                              :adjustment
+                              (make-instance 'gtk:gtk-adjustment
+                                             :value (frequency->position 440)
+                                             :lower *min-position*
+                                             :upper *max-position*
+                                             :step-increment 1)))
 ```
 
-Underneath the slider is a text field showing the current frequency and buttons
-to increase/decrease the frequency by one octave.
+Underneath the slider is a spin button showing the current frequency and
+buttons to increase/decrease the frequency by one octave.
 
-```racket
-(define frequency-pane (new horizontal-pane% [parent frame]
-                                             [border 10]
-                                             [alignment '(center center)]))
-(define lower-button (new button% [parent frequency-pane]
-                                  [label "<"]))
-(define frequency-field (new text-field% [label #f]
-                                         [parent frequency-pane]
-                                         [init-value "440"]
-                                         [min-width 64]
-                                         [stretchable-width #f]))
-(define frequency-label (new message% [parent frequency-pane] [label "Hz"]))
-(define higher-button (new button% [parent frequency-pane]
-                                   [label ">"]))
+```lisp
+; Create a spin button with a units label
+; Arguments: from - number, lower bound of range),
+;            to - number, upper bound of range
+;            initial - number, initial value of spin button
+;            units - string, label after spin button
+; Return value: The gtk-spin-button instance inside the container
+(defun units-spin-button (from to initial units)
+  (let ((container (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 10))
+        (spin-button (make-instance 'gtk:gtk-spin-button
+                                    :adjustment
+                                    (make-instance 'gtk:gtk-adjustment
+                                                   :value initial
+                                                   :lower from
+                                                   :upper to
+                                                   :step-increment 1)))
+        (label (make-instance 'gtk:gtk-label :label units)))
+    (gtk:gtk-box-pack-start container spin-button :fill nil)
+    (gtk:gtk-box-pack-start container label :fill nil)
+    ; Return the container holding the spin button and label
+    spin-button))
+
+(defvar frequency-box (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 25))
+(defvar lower-button (make-instance 'gtk:gtk-button :label "<"))
+(gtk:gtk-box-pack-start frequency-box lower-button :fill nil)
+(defvar frequency-field (units-spin-button *min-frequency* *max-frequency* 440 "Hz"))
+(gtk:gtk-box-pack-start frequency-box (gtk:gtk-widget-parent frequency-field) :fill nil)
+(defvar higher-button (make-instance 'gtk:gtk-button :label ">"))
+(gtk:gtk-box-pack-start frequency-box higher-button :fill nil)
+(gtk:gtk-box-pack-start vbox frequency-box)
 ```
 
-The `horizontal-pane%` is an invisible widget that helps with layout. At this
-point, we are starting to have a nice looking interface, but it doesn't do
-anything. If you click the buttons or slide the slider, nothing happens. The
-widget classes accept a `callback` parameter that wires the widget up to a
-function. If we add a callback function to the slider, that function will be
-called each time the slider is moved.
+We can also use boxes to help with layout. I created a function that I can
+reuse later to generate the spin button and label and pack them together in a
+box.
 
-```racket
+At this point, we are starting to have a nice looking interface, but it doesn't
+do anything. If you click the buttons or slide the slider, nothing happens.
+Widgets emit signals, and callback functions can be connected to these signals.
+If we connect a callback function to the `value-changed` signal of the slider's
+adjustment object, that function will be called each time the slider is moved.
+
+```lisp
 ; Link slider to text field display of frequency
-(define (adjust-frequency widget event)
-  (send frequency-field set-value
-    (~a (position->frequency (send widget get-value)))))
-(define (adjust-slider entry event)
-  (define new-freq (string->number (send entry get-value)))
-  (send slider set-value
-    (frequency->position (if new-freq new-freq *min-frequency*))))
+(defun adjust-frequency (adjustment)
+  (setf (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field))
+        (position->frequency (gtk:gtk-adjustment-value adjustment))))
+(defun adjust-slider (adjustment)
+  (setf (gtk:gtk-adjustment-value (gtk:gtk-range-adjustment slider))
+        (frequency->position (gtk:gtk-adjustment-value adjustment))))
 ```
 
-A callback function takes two arguments: the first is the instance of the
-object that called it and the second is the event type. The `text-field%`
-expects a string, so we have to convert the number returned by
-`position->frequency` to a string with `~a`. Next all there is to do is wire
-these functions up to the widgets:
+The arguments a callback function takes is dependent on the signal being
+handled. Wire these functions up to the widgets:
 
-```racket
-(define slider (new slider% [label #f]
-                            ...
-                            [callback adjust-frequency]
-                            ...))
-...
-(define frequency-field (new text-field% [label #f]
-                                         ...
-                                         [callback adjust-slider]
-                                         ...))
+```lisp
+(gobject:g-signal-connect (gtk:gtk-range-adjustment slider) "value-changed" #'adjust-frequency)
+(gobject:g-signal-connect (gtk:gtk-spin-button-adjustment frequency-field) "value-changed" #'adjust-slider)
 ```
 
 Wire the buttons up to callback functions called `decrease-octave` and
 `increase-octave`. An [octave](https://en.wikipedia.org/wiki/Octave) is "the
 interval between one musical pitch and another with double its frequency."
 
-```racket
-; Set frequency slider and display
-(define (set-frequency freq)
-  (send slider set-value (frequency->position freq))
-  (send frequency-field set-value (~a freq)))
-
+```lisp
 ; Buttons increase and decrease frequency by one octave
-(define (adjust-octave modifier)
-  (set-frequency (* (string->number (send frequency-field get-value)) modifier)))
-(define (decrease-octave button event) (adjust-octave 0.5))
-(define (increase-octave button event) (adjust-octave 2))
+(defun set-frequency (freq)
+  (setf (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field)) freq))
+(defun adjust-octave (modifier)
+  (set-frequency (* (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field)) modifier)))
+(defun decrease-octave (widget) (adjust-octave 0.5))
+(defun increase-octave (widget) (adjust-octave 2))
+
+(gobject:g-signal-connect lower-button "clicked" #'decrease-octave)
+(gobject:g-signal-connect higher-button "clicked" #'increase-octave)
 ```
 
-If you slide the slider, the text field updates accordingly. If you type a
-number in the text field, the slider updates accordingly. All good, right? What
-if a user (and you know they will) enters a number higher than 20,000 or a
-letter?
-
-The widgets included with Racket are pretty basic, but we can extend the
-classes of the built-in widgets to create custom widgets. Let's extend the
-`text-field%` class to create a new `number-field%` class. This class will have
-two additional init variables that specify a `min-value` and `max-value` and
-only allow numbers that fall within that range.
-
-```racket
-; Extend the text-field% class to validate data when field loses focus. Field
-; should contain only numbers within allowed range. Otherwise, set to min.
-(define number-field%
-  (class text-field%
-    ; Add init variables to define allowed range
-    (init min-value max-value)
-    (define min-allowed min-value)
-    (define max-allowed max-value)
-    (super-new)
-    (define/override (on-focus on?)
-      (unless on?
-        (define current-value (string->number (send this get-value)))
-        (unless (and current-value
-                     (>= current-value min-allowed)
-                     (<= current-value max-allowed))
-          (send this set-value (~a min-allowed))
-          ; Also reset slider position to make sure it still matches display
-          (send slider set-value (string->number (send frequency-field get-value))))))))
-```
-
-Then we can replace our `text-field%` with a `number-field%`.
-
-```racket
-(define frequency-field (new number-field% [label #f]
-                                           [parent frequency-pane]
-                                           [min-value *min-frequency*]
-                                           [max-value *max-frequency*]
-                                           [callback adjust-slider]
-                                           [init-value "440"]
-                                           [min-width 64]
-                                           [stretchable-width #f]))
-```
+CONTINUE REWRITING RACKET TUTORIAL for SBCL/CL-CFFI-GTK HERE
 
 Let's use this `number-field%` again to create a field to specify the duration
 of the beep in milliseconds:
