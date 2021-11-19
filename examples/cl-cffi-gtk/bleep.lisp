@@ -1,4 +1,5 @@
 (ql:quickload :cl-cffi-gtk)
+(ql:quickload :cl-portaudio)
 
 ; Scale used by slider
 (defparameter *min-position* 0)
@@ -6,6 +7,37 @@
 ; Range of frequencies
 (defparameter *min-frequency* 20)
 (defparameter *max-frequency* 20000)
+
+; Notes -> frequency (middle A-G [A4-G4])
+; http://pages.mtu.edu/~suits/notefreqs.html
+(defvar notes '(("A" . 440.00)
+                ("B" . 493.88)
+                ("C" . 261.63)
+                ("D" . 293.66)
+                ("E" . 329.63)
+                ("F" . 349.23)
+                ("G" . 292.00)))
+
+; Generate a tone using CL-PortAudio
+(defun generate-tone (frequency duration)
+  (let ((frames-per-buffer 1024)
+        (sample-rate 44100d0)
+        (amplitude 0.5))
+    ; Initialize PortAudio environment
+    (portaudio:with-audio
+      ; Open and start audio stream
+      (portaudio:with-default-audio-stream (astream 1 1
+                                            :sample-format :float
+                                            :sample-rate sample-rate
+                                            :frames-per-buffer frames-per-buffer)
+        (dotimes (i (round (/ (* (/ duration 1000) sample-rate) frames-per-buffer)))
+          ; Write buffer to output stream
+          (portaudio:write-stream astream
+            ; portaudio:write-stream requires an array as input, not a list
+            (make-array frames-per-buffer :initial-contents
+              (loop for j from (+ (* frames-per-buffer i) 1) to (* frames-per-buffer (+ i 1)) collect
+                (let ((time (/ j sample-rate)))
+                  (* amplitude (sin (* 2 pi frequency time))))))))))))
 
 ; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
 ; Adapted from https://stackoverflow.com/questions/846221/logarithmic-slider
@@ -88,6 +120,37 @@
 (gobject:g-signal-connect higher-button "clicked" #'increase-octave)
 (gtk:gtk-box-pack-start frequency-box higher-button :fill nil)
 (gtk:gtk-box-pack-start vbox frequency-box)
+
+; General Controls
+
+(defvar control-box (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 25))
+(defvar duration-field (units-spin-button 1 600000 200 "ms"))
+(gtk:gtk-box-pack-start control-box (gtk:gtk-widget-parent duration-field) :fill nil)
+
+; Create combo box and label
+(defvar note-box (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 10))
+(defvar note-label (make-instance 'gtk:gtk-label :label "♪"))
+(gtk:gtk-box-pack-start note-box note-label :fill nil)
+(defvar note (make-instance 'gtk:gtk-combo-box-text))
+(gtk:gtk-box-pack-start note-box note :fill nil)
+; Populate combo box
+(gtk:gtk-combo-box-text-append-text note "A")
+(gtk:gtk-combo-box-text-append-text note "B")
+(gtk:gtk-combo-box-text-append-text note "C")
+(gtk:gtk-combo-box-text-append-text note "D")
+(gtk:gtk-combo-box-text-append-text note "E")
+(gtk:gtk-combo-box-text-append-text note "F")
+(gtk:gtk-combo-box-text-append-text note "G")
+; Set frequency to specific note
+(gobject:g-signal-connect note "changed"
+  (lambda (object)
+    ; Changed to gtk-combo-box-text-active-text if Quicklisp gets updated with
+    ; the version of cl-cffi-gtk in the crategus Git.
+    (let ((value (gtk:gtk-combo-box-text-get-active-text object)))
+      (set-frequency (cdr (assoc value notes :test 'equal))))))
+; Pack the combo box
+(gtk:gtk-box-pack-start control-box note-box :fill nil)
+(gtk:gtk-box-pack-start vbox control-box)
 
 (gtk:within-main-loop
   ; Quit program when window closed

@@ -231,67 +231,117 @@ interval between one musical pitch and another with double its frequency."
 (gobject:g-signal-connect higher-button "clicked" #'increase-octave)
 ```
 
-CONTINUE REWRITING RACKET TUTORIAL for SBCL/CL-CFFI-GTK HERE
+We'll reuse the `units-spin-button` function we created to create a field to
+specify the duration of the beep in millseconds:
 
-Let's use this `number-field%` again to create a field to specify the duration
-of the beep in milliseconds:
-
-```racket
-(define control-pane (new horizontal-pane% [parent frame]
-                                           [border 25]
-                                           [spacing 25]))
-(define duration-pane (new horizontal-pane% [parent control-pane]))
-(define duration-field (new number-field% [label "Duration "]
-                                          [parent duration-pane]
-                                          [min-value 1]
-                                          [max-value 600000] ; 10 minutes
-                                          [init-value "200"]
-                                          [min-width 120]))
+```lisp
+(defvar control-box (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 25))
+(defvar duration-field (units-spin-button 1 600000 200 "ms"))
+(gtk:gtk-box-pack-start control-box (gtk:gtk-widget-parent duration-field) :fill nil)
+(gtk:gtk-box-pack-start vbox control-box)
 ```
 
 Frequency is rather abstract. Let's also give the user the ability to select a
-musical note. We can store the corresponding frequencies for A4-G4 in a hash
-table.
+musical note. We can store the corresponding frequencies for A4-G4 in an
+association list.
 
-```racket
+```lisp
 ; Notes -> frequency (middle A-G [A4-G4])
 ; http://pages.mtu.edu/~suits/notefreqs.html
-(define notes (hash "A" 440.00
-                    "B" 493.88
-                    "C" 261.63
-                    "D" 293.66
-                    "E" 329.63
-                    "F" 349.23
-                    "G" 292.00))
+(define notes '(("A" 440.00)
+                ("B" 493.88)
+                ("C" 261.63)
+                ("D" 293.66)
+                ("E" 329.63)
+                ("F" 349.23)
+                ("G" 292.00)))
 ```
 
 We'll give the user a drop-down menu. Whenever a note is selected from the
-drop-down menu, we'll look up the frequency in the hash table and set it using
-the `set-frequency` helper function we created for the octave buttons.
+drop-down menu, we'll look up the frequency in the association list and set it
+using the `set-frequency` helper function we created for the octave buttons.
 
-```racket
+```lisp
+; Create combo box and label
+(defvar note-box (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 10))
+(defvar note-label (make-instance 'gtk:gtk-label :label "♪"))
+(gtk:gtk-box-pack-start note-box note-label :fill nil)
+(defvar note (make-instance 'gtk:gtk-combo-box-text))
+(gtk:gtk-box-pack-start note-box note :fill nil)
+; Populate combo box
+(gtk:gtk-combo-box-text-append-text note "A")
+(gtk:gtk-combo-box-text-append-text note "B")
+(gtk:gtk-combo-box-text-append-text note "C")
+(gtk:gtk-combo-box-text-append-text note "D")
+(gtk:gtk-combo-box-text-append-text note "E")
+(gtk:gtk-combo-box-text-append-text note "F")
+(gtk:gtk-combo-box-text-append-text note "G")
 ; Set frequency to specific note
-(define (set-note choice event)
-  (set-frequency (hash-ref notes (send choice get-string-selection))))
-(define note (new choice% [label "♪ "]
-                          [choices '("A" "B" "C" "D" "E" "F" "G")]
-                          [parent control-pane]
-                          [callback set-note]))
+(gobject:g-signal-connect note "changed"
+  (lambda (object)
+    (let ((value (gtk:gtk-combo-box-text-get-active-text object)))
+      (set-frequency (cdr (assoc value notes :test 'equal))))))
+; Pack the combo box
+(gtk:gtk-box-pack-start control-box note-box :fill nil)
+(gtk:gtk-box-pack-start vbox control-box)
 ```
 
 Finally, let's make some noise.
 
-```racket
-(require rsound)
+```lisp
+(ql:quickload :cl-portaudio)
 
-; Generate a tone using RSound
-; Explicitly set RSound sample rate in case differs by platform/version
-(default-sample-rate 44100)
-(define (generate-tone button event)
-  (play (make-tone (string->number (send frequency-field get-value))
-                   0.5
-                   ; Duration in samples at sample rate of 44.1 kHz
-                   (inexact->exact (* 44.1 (string->number (send duration-field get-value)))))))
+; Generate a tone using CL-PortAudio
+(defun generate-tone (frequency duration)
+  (let ((frames-per-buffer 1024)
+        (sample-rate 44100d0)
+        (amplitude 0.5))
+    ; Initialize PortAudio environment
+    (portaudio:with-audio
+      ; Open and start audio stream
+      (portaudio:with-default-audio-stream (astream 1 1
+                                            :sample-format :float
+                                            :sample-rate sample-rate
+                                            :frames-per-buffer frames-per-buffer)
+        (dotimes (i (round (/ (* (/ duration 1000) sample-rate) frames-per-buffer)))
+          ; Write buffer to output stream
+          (portaudio:write-stream astream
+            ; portaudio:write-stream requires an array as input, not a list
+            (make-array frames-per-buffer :initial-contents
+              (loop for j from (+ (* frames-per-buffer i) 1) to (* frames-per-buffer (+ i 1)) collect
+                (let ((time (/ j sample-rate)))
+                  (* amplitude (sin (* 2 pi frequency time))))))))))))
+```
+
+We'll use [Common Lisp bindings to
+PortAudio](https://github.com/filonenko-mikhail/cl-portaudio) to generate the
+tone. This can be loaded with [Quicklisp](https://www.quicklisp.org/).
+
+CL-PortAudio comes with a couple of helpful macros that makes initializing
+PortAudio and starting a stream simple. The `with-audio` macro executes body
+within a PortAudio initialize/terminate environment. The
+`with-default-audio-stream` macro executes body with an opened and started
+stream and shuts down the stream after it is done.
+
+Then you just feed PortAudio arrays of samples, `:frames-per-buffer` at a time.
+I initiated `with-default-audio-stream` with one channel, so the array is just
+a single-dimensional array of floating point numbers. If you were producing
+stereo sound, you would generate a two-dimensional array. The [basic formula
+for a sine wave](http://pld.cs.luc.edu/telecom/mnotes/digitized_sound.html) is
+A sin(2πft) where *A* is amplitude, *f* is frequency, and *t* is time:
+
+```lisp
+(* amplitude (sin (* 2 pi frequency time)))
+```
+
+Wire this up to the play button in the QML, and you're ready to make some
+noise.
+
+```qml
+Button {
+  text: "Play"
+  onClicked: Lisp.call("generate-tone", frequency, durationField.value)
+}
 ```
 
 We'll use the Racket [RSound](https://docs.racket-lang.org/rsound/index.html)
