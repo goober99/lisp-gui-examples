@@ -17,7 +17,7 @@ $ cd lisp-gui-examples/examples
 
 ### cl-cffi-gtk (SBCL Common Lisp/GTK)
 
-![Screenshot](screenshots/cl-cffi-gtk.png?raw=true "cl-cffi-gtk screenshot")
+![Screenshot](screenshots/clcffigtk.png?raw=true "cl-cffi-gtk screenshot")
 
 SBCL is available in the repository of most Linux distros. Depending on your
 desktop environment, you probably already have GTK installed (even if you use
