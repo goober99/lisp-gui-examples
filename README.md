@@ -15,6 +15,34 @@ $ git clone https://github.com/goober99/lisp-gui-examples.git
 $ cd lisp-gui-examples/examples
 ```
 
+### cl-cffi-gtk (SBCL Common Lisp/GTK)
+
+![Screenshot](screenshots/cl-cffi-gtk.png?raw=true "cl-cffi-gtk screenshot")
+
+SBCL is available in the repository of most Linux distros. Depending on your
+desktop environment, you probably already have GTK installed (even if you use
+KDE, it's likely you already have GTK installed). For Debian/Ubuntu:
+
+```console
+$ sudo apt install sbcl
+```
+
+The example uses Quicklisp to load cl-cffi-gtk and CL-PortAudio. Install
+Quicklisp and configure SBCL.
+
+Navigate to the `cl-cffi-gtk` example subdirectory and execute bleep.lisp with
+SBCL.
+
+```console
+$ cd cl-cffi-gtk
+$ curl -O https://beta.quicklisp.org/quicklisp.lisp
+$ sbcl --load quicklisp.lisp
+> (quicklisp-quickstart:install)
+> (ql:add-to-init-file)
+> (exit)
+$ sbcl --load bleep.lisp
+```
+
 ### Cljfx (Clojure/JavaFX)
 
 ![Screenshot](screenshots/cljfx.png?raw=true "Cljfx screenshot")
@@ -86,7 +114,7 @@ Chicken Scheme, Tcl/Tk, and Allegro are available in the repository of most
 Linux distros. Install it from your distro's repo. For Debian/Ubuntu:
 
 ```console
-$ apt install chicken-bin tcl tk liballegro5-dev
+$ sudo apt install chicken-bin tcl tk liballegro5-dev
 ```
 
 Optionally on Linux, you can install additional Tk themes and apply the theme
@@ -120,7 +148,7 @@ Racket is available in the repository of most Linux distros. Install it from
 your distro's repo. For Debian/Ubuntu:
 
 ```console
-$ apt install racket
+$ sudo apt install racket
 ```
 
 The example uses the RSound package to generate the tone. You can install it

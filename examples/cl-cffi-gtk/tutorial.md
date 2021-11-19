@@ -3,12 +3,12 @@ developed with SBCL but should also work with Clozure CL and CLISP. For this
 tutorial, I'll be using SBCL. Instead of building yet another calculator, let's
 build a GUI for generating a tone.
 
-![Screenshot](../../screenshots/racket.png?raw=true "Example screenshot")
+![Screenshot](../../screenshots/clcffigtk.png?raw=true "Example screenshot")
 
 You'll need SBCL installed. It's available in the repositories of most Linux
 distros, so just install it from your distro's repo. Depending on your destkop
 environment, you probably already have GTK installed (even if you use KDE, it's
-highly likely you already have GTK installed.) If you're on Windows or macOS,
+highly likely you already have GTK installed). If you're on Windows or macOS,
 you'll probably have to install GTK in addition to SBCL.
 
 The Common Lisp bindings to GTK can be installed with
@@ -160,10 +160,12 @@ buttons to increase/decrease the frequency by one octave.
 ;            to - number, upper bound of range
 ;            initial - number, initial value of spin button
 ;            units - string, label after spin button
+; Optional Arguments: digits - number <= 20, number of decimal places to show
 ; Return value: The gtk-spin-button instance inside the container
-(defun units-spin-button (from to initial units)
+(defun units-spin-button (from to initial units &key (digits 0))
   (let ((container (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 10))
         (spin-button (make-instance 'gtk:gtk-spin-button
+                                    :digits digits
                                     :adjustment
                                     (make-instance 'gtk:gtk-adjustment
                                                    :value initial
@@ -176,12 +178,14 @@ buttons to increase/decrease the frequency by one octave.
     ; Return the container holding the spin button and label
     spin-button))
 
-(defvar frequency-box (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 25))
+(defvar frequency-field (units-spin-button *min-frequency* *max-frequency* 440 "Hz" :digits 2))
+
 (defvar lower-button (make-instance 'gtk:gtk-button :label "<"))
-(gtk:gtk-box-pack-start frequency-box lower-button :fill nil)
-(defvar frequency-field (units-spin-button *min-frequency* *max-frequency* 440 "Hz"))
-(gtk:gtk-box-pack-start frequency-box (gtk:gtk-widget-parent frequency-field) :fill nil)
 (defvar higher-button (make-instance 'gtk:gtk-button :label ">"))
+
+(defvar frequency-box (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 25))
+(gtk:gtk-box-pack-start frequency-box lower-button :fill nil)
+(gtk:gtk-box-pack-start frequency-box (gtk:gtk-widget-parent frequency-field) :fill nil)
 (gtk:gtk-box-pack-start frequency-box higher-button :fill nil)
 (gtk:gtk-box-pack-start vbox frequency-box)
 ```
@@ -193,25 +197,26 @@ box.
 At this point, we are starting to have a nice looking interface, but it doesn't
 do anything. If you click the buttons or slide the slider, nothing happens.
 Widgets emit signals, and callback functions can be connected to these signals.
-If we connect a callback function to the `value-changed` signal of the slider's
-adjustment object, that function will be called each time the slider is moved.
+If we connect a callback function to the `change-value` signal of the slider,
+that function will be called whenever the slider is moved. The arguments a
+callback function takes are dependent on the signal being handled. The
+adjustment object of the spin button has a `value-changed` signal.
 
 ```lisp
 ; Link slider to text field display of frequency
-(defun adjust-frequency (adjustment)
-  (setf (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field))
-        (position->frequency (gtk:gtk-adjustment-value adjustment))))
-(defun adjust-slider (adjustment)
-  (setf (gtk:gtk-adjustment-value (gtk:gtk-range-adjustment slider))
-        (frequency->position (gtk:gtk-adjustment-value adjustment))))
-```
-
-The arguments a callback function takes is dependent on the signal being
-handled. Wire these functions up to the widgets:
-
-```lisp
-(gobject:g-signal-connect (gtk:gtk-range-adjustment slider) "value-changed" #'adjust-frequency)
-(gobject:g-signal-connect (gtk:gtk-spin-button-adjustment frequency-field) "value-changed" #'adjust-slider)
+(gobject:g-signal-connect slider "change-value"
+  ; Connect to change-value signal of slider instead of value-changed signal of
+  ; its corresponding adjustment object so that frequency will only be updated
+  ; when interactively moved avoiding rounding differences between slider and
+  ; sping button.
+  (lambda (range scroll value)
+    (declare (ignore range scroll))
+    (setf (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field))
+          (position->frequency value))))
+(gobject:g-signal-connect (gtk:gtk-spin-button-adjustment frequency-field) "value-changed"
+  (lambda (adjustment)
+    (setf (gtk:gtk-adjustment-value (gtk:gtk-range-adjustment slider))
+          (frequency->position (gtk:gtk-adjustment-value adjustment)))))
 ```
 
 Wire the buttons up to callback functions called `decrease-octave` and
@@ -224,8 +229,8 @@ interval between one musical pitch and another with double its frequency."
   (setf (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field)) freq))
 (defun adjust-octave (modifier)
   (set-frequency (* (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field)) modifier)))
-(defun decrease-octave (widget) (adjust-octave 0.5))
-(defun increase-octave (widget) (adjust-octave 2))
+(defun decrease-octave (widget) (declare (ignore widget)) (adjust-octave 0.5))
+(defun increase-octave (widget) (declare (ignore widget)) (adjust-octave 2))
 
 (gobject:g-signal-connect lower-button "clicked" #'decrease-octave)
 (gobject:g-signal-connect higher-button "clicked" #'increase-octave)
@@ -334,24 +339,14 @@ A sin(2πft) where *A* is amplitude, *f* is frequency, and *t* is time:
 (* amplitude (sin (* 2 pi frequency time)))
 ```
 
-Wire this up to the play button in the QML, and you're ready to make some
-noise.
+Wire this up to a button between the duration and note selector, and you're
+ready to make some noise.
 
-```qml
-Button {
-  text: "Play"
-  onClicked: Lisp.call("generate-tone", frequency, durationField.value)
-}
-```
-
-We'll use the Racket [RSound](https://docs.racket-lang.org/rsound/index.html)
-package to generate the tone. This package isn't bundled with Racket, but you
-can install it with the `raco` utility that comes with Racket (`raco pkg
-install rsound`). Wire this up to a button between the duration and note
-selector, and you're ready to make some noise.
-
-```racket
-(define play-button (new button% [parent control-pane]
-                                 [label "Play"]
-                                 [callback generate-tone]))
+```lisp
+(defvar play-button (make-instance 'gtk:gtk-button :label "Play"))
+(gobject:g-signal-connect play-button "clicked" (lambda (widget)
+  (declare (ignore widget))
+  (generate-tone (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field))
+                 (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment duration-field)))))
+(gtk:gtk-box-pack-start control-box play-button :fill nil)
 ```

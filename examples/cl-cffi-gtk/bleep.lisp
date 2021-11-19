@@ -57,10 +57,12 @@
 ;            to - number, upper bound of range
 ;            initial - number, initial value of spin button
 ;            units - string, label after spin button
+; Optional Arguments: digits - number <= 20, number of decimal places to show
 ; Return value: The gtk-spin-button instance inside the container
-(defun units-spin-button (from to initial units)
+(defun units-spin-button (from to initial units &key (digits 0))
   (let ((container (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 10))
         (spin-button (make-instance 'gtk:gtk-spin-button
+                                    :digits digits
                                     :adjustment
                                     (make-instance 'gtk:gtk-adjustment
                                                    :value initial
@@ -81,22 +83,6 @@
 
 ; Frequency controls
 
-; Link slider to text field display of frequency
-(defun adjust-frequency (adjustment)
-  (setf (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field))
-        (position->frequency (gtk:gtk-adjustment-value adjustment))))
-(defun adjust-slider (adjustment)
-  (setf (gtk:gtk-adjustment-value (gtk:gtk-range-adjustment slider))
-        (frequency->position (gtk:gtk-adjustment-value adjustment))))
-
-; Buttons increase and decrease frequency by one octave
-(defun set-frequency (freq)
-  (setf (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field)) freq))
-(defun adjust-octave (modifier)
-  (set-frequency (* (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field)) modifier)))
-(defun decrease-octave (widget) (adjust-octave 0.5))
-(defun increase-octave (widget) (adjust-octave 2))
-
 (defvar slider (make-instance 'gtk:gtk-scale
                               :orientation :horizontal
                               :draw-value nil
@@ -106,18 +92,40 @@
                                              :lower *min-position*
                                              :upper *max-position*
                                              :step-increment 1)))
-(gobject:g-signal-connect (gtk:gtk-range-adjustment slider) "value-changed" #'adjust-frequency)
 (gtk:gtk-box-pack-start vbox slider)
+(defvar frequency-field (units-spin-button *min-frequency* *max-frequency* 440 "Hz" :digits 2))
 
-(defvar frequency-box (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 25))
+; Link slider to text field display of frequency
+(gobject:g-signal-connect slider "change-value"
+  ; Connect to change-value signal of slider instead of value-changed signal of
+  ; its corresponding adjustment object so that frequency will only be updated
+  ; when interactively moved avoiding rounding differences between slider and
+  ; sping button.
+  (lambda (range scroll value)
+    (declare (ignore range scroll))
+    (setf (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field))
+          (position->frequency value))))
+(gobject:g-signal-connect (gtk:gtk-spin-button-adjustment frequency-field) "value-changed"
+  (lambda (adjustment)
+    (setf (gtk:gtk-adjustment-value (gtk:gtk-range-adjustment slider))
+          (frequency->position (gtk:gtk-adjustment-value adjustment)))))
+
+; Buttons increase and decrease frequency by one octave
+(defun set-frequency (freq)
+  (setf (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field)) freq))
+(defun adjust-octave (modifier)
+  (set-frequency (* (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field)) modifier)))
+(defun decrease-octave (widget) (declare (ignore widget)) (adjust-octave 0.5))
+(defun increase-octave (widget) (declare (ignore widget)) (adjust-octave 2))
+
 (defvar lower-button (make-instance 'gtk:gtk-button :label "<"))
 (gobject:g-signal-connect lower-button "clicked" #'decrease-octave)
-(gtk:gtk-box-pack-start frequency-box lower-button :fill nil)
-(defvar frequency-field (units-spin-button *min-frequency* *max-frequency* 440 "Hz"))
-(gobject:g-signal-connect (gtk:gtk-spin-button-adjustment frequency-field) "value-changed" #'adjust-slider)
-(gtk:gtk-box-pack-start frequency-box (gtk:gtk-widget-parent frequency-field) :fill nil)
 (defvar higher-button (make-instance 'gtk:gtk-button :label ">"))
 (gobject:g-signal-connect higher-button "clicked" #'increase-octave)
+
+(defvar frequency-box (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 25))
+(gtk:gtk-box-pack-start frequency-box lower-button :fill nil)
+(gtk:gtk-box-pack-start frequency-box (gtk:gtk-widget-parent frequency-field) :fill nil)
 (gtk:gtk-box-pack-start frequency-box higher-button :fill nil)
 (gtk:gtk-box-pack-start vbox frequency-box)
 
@@ -126,6 +134,12 @@
 (defvar control-box (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 25))
 (defvar duration-field (units-spin-button 1 600000 200 "ms"))
 (gtk:gtk-box-pack-start control-box (gtk:gtk-widget-parent duration-field) :fill nil)
+(defvar play-button (make-instance 'gtk:gtk-button :label "Play"))
+(gobject:g-signal-connect play-button "clicked" (lambda (widget)
+  (declare (ignore widget))
+  (generate-tone (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field))
+                 (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment duration-field)))))
+(gtk:gtk-box-pack-start control-box play-button :fill nil)
 
 ; Create combo box and label
 (defvar note-box (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 10))
