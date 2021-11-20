@@ -106,24 +106,24 @@ JavaScript, but it was easy enough to port to Common Lisp.
 
 ```lisp
 ; Scale used by slider
-(define *min-position* 0)
-(define *max-position* 2000)
+(defparameter *min-position* 0)
+(defparameter *max-position* 2000)
 ; Range of frequencies
-(define *min-frequency* 20)
-(define *max-frequency* 20000)
+(defparameter *min-frequency* 20)
+(defparameter *max-frequency* 20000)
 
 ; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
 ; Adapted from https://stackoverflow.com/questions/846221/logarithmic-slider
 
-(define min-freq (log *min-frequency*))
-(define max-freq (log *max-frequency*))
-(define frequency-scale (/ (- max-freq min-freq) (- *max-position* *min-position*)))
+(defvar min-freq (log *min-frequency*))
+(defvar max-freq (log *max-frequency*))
+(defvar frequency-scale (/ (- max-freq min-freq) (- *max-position* *min-position*)))
 ; Convert slider position to frequency
-(define (position->frequency position)
-  (inexact->exact (round (exp (+ min-freq (* frequency-scale (- position *min-position*)))))))
+(defun position->frequency (position)
+  (round (exp (+ min-freq (* frequency-scale (- position *min-position*))))))
 ; Convert frequency to slider position
-(define (frequency->position freq)
-  (inexact->exact (round (/ (- (log freq) min-freq) (+ frequency-scale *min-position*)))))
+(defun frequency->position (freq)
+  (round (/ (- (log freq) min-freq) (+ frequency-scale *min-position*))))
 ```
 
 I added some global parameters to the top of the script. The variable name
@@ -253,13 +253,13 @@ association list.
 ```lisp
 ; Notes -> frequency (middle A-G [A4-G4])
 ; http://pages.mtu.edu/~suits/notefreqs.html
-(define notes '(("A" 440.00)
-                ("B" 493.88)
-                ("C" 261.63)
-                ("D" 293.66)
-                ("E" 329.63)
-                ("F" 349.23)
-                ("G" 292.00)))
+(defvar notes '(("A" . 440.00)
+                ("B" . 493.88)
+                ("C" . 261.63)
+                ("D" . 293.66)
+                ("E" . 329.63)
+                ("F" . 349.23)
+                ("G" . 292.00)))
 ```
 
 We'll give the user a drop-down menu. Whenever a note is selected from the
