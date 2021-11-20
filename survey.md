@@ -50,20 +50,24 @@ batteries-included philosophy. You can't get much more batteries included than
 a built-in GUI library. It's even that rare species of cross-platform GUI
 library that uses [native
 controls](https://blog.racket-lang.org/2010/12/rebuilding-rackets-graphics-layer.html)
-(GTK on Linux). While not as extensive as the widgets available if you were
-using the native toolkits directly, Racket has all the [basic
+(GTK on Linux).
+
+While not as extensive as the widgets available if you were using the native
+toolkits directly, Racket has all the [basic
 widgets](https://docs.racket-lang.org/gui/Widget_Gallery.html) plus a [graph
 plotting library](https://docs.racket-lang.org/plot/) and a [drawing
 toolkit](https://docs.racket-lang.org/draw/index.html). Take a look at the
 brilliant Alex Harsányi's
 [ActivityLog2](https://github.com/alex-hhh/ActivityLog2), an app to analyze
 data from various fitness activities, for an example of a complex GUI written
-in Racket. If you stumbled upon this article looking for a cross-platform GUI
-library for another language, it might be worth it to switch to Racket. If Lisp
-is the hidden gem of programming languages, Racket just may be the hidden gem
-of cross-platform GUI toolkits. No, really. You can stop reading here. Unless
-you have specific requirements, Racket is the best cross-platform GUI toolkit
-for Lisp (or any language).
+in Racket.
+
+If you stumbled upon this article looking for a cross-platform GUI library for
+another language, it might be worth it to switch to Racket. If Lisp is the
+hidden gem of programming languages, Racket just may be the hidden gem of
+cross-platform GUI toolkits. No, really. You can stop reading here. Unless you
+have specific requirements, Racket is the best cross-platform GUI toolkit for
+Lisp (or any language).
 
 Many of the other libraries in this survey are good libraries but have a [bus
 factor](https://en.wikipedia.org/wiki/Bus_factor) of 1. Since the GUI library
@@ -133,6 +137,52 @@ Generally, choosing one of the above two recommended libraries is going to
 result in the smoothest development experience, but they aren't the only two
 ways to build a GUI with Lisp. Maybe you have special requirements or really
 want to use a Lisp other than Racket or Clojure.
+
+### cl-cffi-gtk
+
+Links: [Tutorial](https://blog.matthewdmiller.net/) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/cl-cffi-gtk)<br>
+**Lisp Dialect:** Common Lisp / **Common Lisp Implementation:** SBCL (and probably others) / **GUI Toolkit:** GTK
+
+<img align="right" width="320" height="254" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/clcffigtk-nyxt.png" />
+
+GTK is a cross-platform GUI toolkit, but it is most well known on Linux where
+multiple desktop environments are based on it (such as GNOME, Xfce, and MATE).
+It draws its own widgets, but those widgets are the native widgets on most
+Linux distros. It may look a bit foreign on Windows and macOS, but I don't
+think native look and feel is as big of deal as some make it out to be.
+
+The Common Lisp bindings are developed with SBCL but also tested with Clozure
+CL and CLISP. As someone who generally prefers Scheme, one thing from Common
+Lisp that I am jealous of is Quicklisp. Libraries in Quicklisp generally work
+with most Common Lisp implementations. That can't be said for most Scheme
+libraries, especially ones that require FFI.
+
+One thing I really liked about cl-cffi-gtk is that it runs the GUI in a
+separate thread. This is cool, because even after the window appears, you can
+still type commands into the REPL to interact with the program. I could query
+and even change the properties of widgets from the REPL. With most of the Lisp
+GUI libraries I've tried out, the GUI takes over completely once it is
+launched, and you have to close the window before being able to type commands
+into the REPL again.
+
+The [documentation](http://www.crategus.com/books/cl-gtk/gtk-tutorial.html) for
+cl-cffi-gtk is filled with examples, tutorials, and helpful hints. It has some
+of the best documentation of any Lisp GUI library I've evaluated.
+
+The Git repo went without any commits from 2016-2019. This led many to believe
+the project was abandoned and to a
+[fork](https://github.com/crategus/cl-cffi-gtk/issues/77). The fork is now
+marked as "archived by the owner" on GitHub while the maintainer of the
+original has been quite active since 2019. There are fixes and changes in the
+fork that were never merged back into the upstream, and the two have diverged
+significantly now. At least as of this writing in 2021, Quicklisp still points
+to the fork.
+
+There's a WYSIWYG GUI designer for GTK called
+[Glade](https://en.wikipedia.org/wiki/Glade_Interface_Designer). It outputs
+XML, so it is programming language agnostic. There is an [example
+application](https://github.com/ralph-schleicher/atmosphere-calculator) of a
+GUI built with Glade and loaded with cl-cffi-gtk.
 
 ### EQL5
 
