@@ -312,10 +312,13 @@ Finally, let's make some noise.
           ; Write buffer to output stream
           (portaudio:write-stream astream
             ; portaudio:write-stream requires an array as input, not a list
-            (make-array frames-per-buffer :initial-contents
+            (make-array frames-per-buffer :element-type 'single-float :initial-contents
               (loop for j from (+ (* frames-per-buffer i) 1) to (* frames-per-buffer (+ i 1)) collect
                 (let ((time (/ j sample-rate)))
-                  (* amplitude (sin (* 2 pi frequency time))))))))))))
+                  ; Since sample-rate and pi are double-float, they make result
+                  ; double-float. PortAudio expects single-float, and will warn
+                  ; when run with SBCL if not given single-float.
+                  (coerce (* amplitude (sin (* 2 pi frequency time))) 'single-float))))))))))
 ```
 
 We'll use [Common Lisp bindings to
