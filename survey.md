@@ -378,3 +378,55 @@ already comes with implementations for over a dozen different Scheme
 implementations (like Bigloo, Gauche, and Kawa) that can just be uncommented.
 For a quick GUI for some utility you've written for your own use, Tk isn't that
 bad, but I wouldn't use it for anything other people were going to see.
+
+## Deprecated, Dormant, or Otherwise Not Production-Ready
+
+You may have read the above survey and asked, "What about [insert GUI
+library]?" I've only attempted to evaluate those GUI libraries I consider
+production-quality. Here are some libraries that are not there yet (or maybe
+not there anymore). I plan to keep this survey up to date, so I'll keep an eye
+on these libraries, and if their status changes, you just might see them move
+up above this heading in the survey.
+
+- [CAPI](http://www.lispworks.com/products/capi.html) for LispWorks. Wraps
+  native controls for Windows macOS, and Linux (GTK). Proprietary.
+- [CLOG](https://github.com/rabbibotton/clog) for Common Lisp. Bills itself as
+  a GUI library, but from what I can tell, really is just a web framework. You
+  can package your web app to look like a desktop app with Electron or other
+  webview, but that's no different than what you can do with other web
+  frameworks, and evaluating web frameworks is outside the scope of this survey.
+- [fn(fx)](https://github.com/fn-fx/fn-fx). Clojure wrapper of JavaFX. Last
+  commit in 2019, and all GitHub issues have gone unanswered since then. See
+  Cljfx, which is one of my two recommended GUI libraries, for a maintained
+  Clojure wrapper of JavaFX.
+- [Gauche-gtk](https://github.com/shirok/Gauche-gtk2). GTK bindings for Gauche
+  Scheme. [Still depends](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=967370)
+  on GTK 2. Debian package [fails to build](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=981928)
+  and was removed from testing and thus current stable.
+- [Guile-Gnome](https://www.gnu.org/software/guile-gnome/). GTK bindings for
+  Guile. Essentially unmaintained. Still depends on [GTK
+  2](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=967505) and [Guile
+  2.2](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=969698). Last release
+  was in 2017, and the release notes stated, "But don't hail, this is a
+  maintainance release, which actually merely comment the build of the Corba and
+  Gnome-VFS modules, due to incompatible changes in Guile-2.2. [I]f you think you
+  have the skill and some free time to fix these two, please do!" I'm keeping an
+  eye on [Guile GI](https://github.com/spk121/guile-gi) as a possible successor,
+  but the developer still considers it beta quality and only partially
+  documented, and the API is still subject to change.
+- [McCLIM](https://common-lisp.net/project/mcclim/) for Common Lisp. This looks
+  really interesting, and I'll be keeping an eye on it. Currently, the only
+  officially supported [backend](https://github.com/McCLIM/McCLIM/wiki/Backends)
+  renders directly to an X server and has a Motif look and feel. Until another
+  backend matures that either wraps native controls or draws more modern looking
+  controls using OpenGL, I don't consider it production ready.
+- [Scheme Widget Library](https://www.scheme.com/swl.html). Tk bindings for
+  Chez Scheme. Unmaintained.
+- [Seesaw](https://github.com/clj-commons/seesaw). Clojure wrapper of Swing.
+  Essentially [unmaintained](https://github.com/clj-commons/seesaw/issues/224).
+  The original maintainer lost interest, and it was migrated to the [CLJ
+  Commons](https://github.com/clj-commons) GitHub organization. They're stated
+  goal is to "adopt important Clojure libraries when the original maintainers no
+  longer have the time or interest to keep them updated." Since they adopted
+  Seesaw, there hasn't been a single new commit. Swing itself is somewhat of a
+  legacy library now that there is JavaFX.
