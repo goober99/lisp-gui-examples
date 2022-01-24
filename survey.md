@@ -379,7 +379,7 @@ implementations (like Bigloo, Gauche, and Kawa) that can just be uncommented.
 For a quick GUI for some utility you've written for your own use, Tk isn't that
 bad, but I wouldn't use it for anything other people were going to see.
 
-## Deprecated, Dormant, or Otherwise Not Production-Ready
+## Deprecated, Dormant, or Otherwise Out of Scope
 
 You may have read the above survey and asked, "What about [insert GUI
 library]?" I've only attempted to evaluate those GUI libraries I consider
