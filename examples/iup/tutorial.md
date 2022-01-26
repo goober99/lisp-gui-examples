@@ -211,7 +211,7 @@ In IUP a spin box is just a text box that has the `spin` attribute set to
 doesn't do anything. If you click the buttons or slide the slider, nothing
 happens. Widgets also take callbacks. Callbacks are specified just like
 attributes and are functions that take one or more arguments, usually self,
-which is the widget to which the callback belongs, and returns a symbol:
+which is the widget to which the callback belongs, and return a symbol:
 usually `'default` but also `'close` to close a dialog or others such as
 `'ignore` and `'continue`. The names of callbacks that a widget accepts and
 their arguments can be looked up in the [original C
