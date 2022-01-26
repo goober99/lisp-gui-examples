@@ -49,13 +49,21 @@ environment variable to tell `chicken-install` where to find these files.
 $ CSC_OPTIONS='-I/usr/include/iup -I/usr/include/im -I/usr/include/cd -L/usr/lib64' chicken-install -sudo iup
 ```
 
+You'll also need to specify the dynamic library path when executing the program
+with Chicken.
+
+```console
+$ LD_LIBRARY_PATH=/usr/lib64 csi bleep.scm
+```
+
 If using IUP from its native C, attribute setting is a separate step from
 object construction. The Scheme bindings add a little syntactic sugar that
 allow specifying your entire UI as an S-expression. Attribute names are
 keywords which can be passed directly to widget constructors along with child
-widgets. You can look up what attributes a widget accepts in the original C
-documentation. In Chicken, keywords can be written with either a leading or
-trailing colon. For the examples in this tutorial, a trailing colon is used.
+widgets. You can look up what attributes a widget accepts in the [original C
+documentation](https://www.tecgraf.puc-rio.br/iup/). In Chicken, keywords can
+be written with either a leading or trailing colon. For the examples in this
+tutorial, a trailing colon is used.
 
 ```scheme
 (import iup)
@@ -74,30 +82,34 @@ trailing colon. For the examples in this tutorial, a trailing colon is used.
 (exit 0)
 ```
 
-IUP convention is to use "Yes" and "No" as boolean values. In Scheme you can
-use the 'Yes and 'No symbols.
-
-We set the window title with `tk/wm` and start the event loop with
-`tk-event-loop`. We now have an empty window. Now let's add some widgets to
-this window.
+The `vbox` is an invisible widget that helps with layout. Let's start by
+placing a slider within this `vbox`.
 
 ```scheme
-(define slider (tk 'create-widget 'scale 'from: 20 'to: 20000))
-(slider 'set 440)
-(tk/grid slider 'row: 0 'columnspan: 3 'sticky: 'ew 'padx: 20 'pady: 20)
+(define slider
+  (valuator
+    min: 20
+    max: 20000
+    value: 440
+    expand: 'Yes))
+
+(define dlg
+  (dialog
+    title: "Bleep"
+    (vbox
+      alignment: 'ACENTER
+      gap: 25
+      margin: '25x25
+      slider)))
 ```
 
-Widgets are organized hierarchically. This is done by invoking a parent widget
-with the sub-command `create-widget`. PS/Tk associates a widget named `tk` with
-the top-level window, so most widgets will start as a call to `tk` (e.g. `(tk
-'create-widget 'label 'text: "Hello, World!")`). Options are quoted and get a
-trailing colon (e.g. `'text: "Hello, World!"`).
-
-Creating a widget returns a Scheme function. If you give this function a name,
-you can call it with sub-commands such as `configure`, `get`, and `set`. Just
-creating a widget doesn't make it appear on screen. For that you need a
-geometry manager, of which Tk has three: the packer, the gridder, and the
-placer (`tk/pack`, `tk/grid`, and `tk/place` in Scheme, respectively).
+In IUP parlance, a slider is a `valuator`. IUP convention is to use "Yes" and
+"No" as boolean values. In Scheme you can use the 'Yes and 'No symbols. To help
+with organization, you can store the widget in a variable. You can add child
+widgets to the `vbox` by passing them to the `vbox` constructor after any other
+attributes (actually, the child widgets can be passed before other attributes
+or even mixed in with the other attributes, but I find it clearest to keep them
+grouped at the end).
 
 The range of frequencies audible by humans is typically between 20 Hz and 20
 KHz (we lose the ability to hear some of those higher frequencies as we age).
@@ -106,7 +118,7 @@ C](https://en.wikipedia.org/wiki/A440_(pitch_standard)) is 440 Hz. Since A4
 serves as a general tuning standard, it seems like a sensible default, but if
 you run the above in Chicken, this is what you'll see:
 
-![Slider](../../screenshots/pstk-linearslider.png?raw=true "Slider showing 440 using a linear scale")
+![Slider](../../screenshots/iup-linearslider.png?raw=true "Slider showing 440 using a linear scale")
 
 The scale of 20 to 20,000 is so large that 440 doesn't appear to move the
 slider at all. Ideally, 440 would fall about the middle of the slider. To
@@ -153,46 +165,60 @@ let's set the initial position of our slider with the `frequency->position`
 function:
 
 ```scheme
-(define slider (tk 'create-widget 'scale 'from: *min-position* 'to: *max-position*))
-(slider 'configure 'value: (frequency->position 440))
+(define slider
+  (valuator
+    min: *min-position*
+    max: *max-position*
+    value: (frequency->position 440)
+    expand: 'Yes))
 ```
 
 Underneath the slider is a spin box showing the current frequency and buttons
 to increase/decrease the frequency by one octave.
 
 ```scheme
-; Create a spin box with a units label
-; Returns frame widget encompassing both spin box and label and the spin box
-; widget itself. This way you can access the value of the spin box.
-; e.g. (define-values (box-with-label just-box) (units-spinbox 1 12 6 "inches"))
-(define (units-spinbox from to initial units)
-  (let* ((container (tk 'create-widget 'frame))
-         (spinbox (container 'create-widget 'spinbox 'from: from 'to: to
-                             'width: (+ 4 (string-length (number->string to)))))
-         (label (container 'create-widget 'label 'text: units)))
-    (spinbox 'set initial)
-    (tk/pack spinbox label 'side: 'left 'padx: 2)
-    (values container spinbox)))
+(define frequency-controls
+  (hbox
+    alignment: 'ACENTER
+    gap: 25
+    margin: '0x0
+    (button title: '<)
+    (hbox
+      alignment: 'ACENTER
+      gap: 5
+      (textbox
+        spin: 'Yes
+        spinmin: *min-frequency*
+        spinmax: *max-frequency*
+        spinvalue: 440)
+      (label "Hz"))
+    (button title: '>)))
 
-(define lower-button (tk 'create-widget 'button 'text: "<"))
-(define-values (frequency-ext frequency-int)
-  (units-spinbox *min-frequency* *max-frequency* 440 "Hz"))
-(define higher-button (tk 'create-widget 'button 'text: ">"))
-
-(tk/grid lower-button 'row: 1 'column: 0 'padx: 20 'pady: 20)
-(tk/grid frequency-ext 'row: 1 'column: 1 'padx: 20 'pady: 20)
-(tk/grid higher-button 'row: 1 'column: 2 'padx: 20 'pady: 20)
+; Main window
+(define dlg
+  (dialog
+    title: "Bleep"
+    (vbox
+      alignment: 'ACENTER
+      gap: 25
+      margin: '25x25
+      slider
+      frequency-controls)))
 ```
 
-The frame widget is an invisible widget that helps with layout. Since all I
-need to arrange within the frame is a spin box and a label, I used `tk/pack` to
-`pack` them side by side. The frame is then organized in a `grid` with the rest
-of the widgets. I created a function that I can reuse later to generate the
-spin box, label, and frame all together. At this point, we are starting to have
-a nice looking interface, but it doesn't do anything. If you click the buttons
-or slide the slider, nothing happens. The widgets have a `command` option that
-wires the widget up to a function. If we add a command to the slider, that
-command will be called each time the slider is moved.
+In IUP a spin box is just a text box that has the `spin` attribute set to
+"Yes." At this point, we are starting to have a nice looking interface, but it
+doesn't do anything. If you click the buttons or slide the slider, nothing
+happens. Widgets also take callbacks. Callbacks are specified just like
+attributes and are functions that take one or more arguments, usually self,
+which is the widget to which the callback belongs, and returns a symbol:
+usually `'default` but also `'close` to close a dialog or others such as
+`'ignore` and `'continue`. The names of callbacks that a widget accepts and
+their arguments can be looked up in the [original C
+documentation](https://www.tecgraf.puc-rio.br/iup/).
+
+If we add a command to the slider, that command will be called each time the
+slider is moved.
 
 ```scheme
 (define slider (tk 'create-widget 'scale 'from: *min-position* 'to: *max-position*
