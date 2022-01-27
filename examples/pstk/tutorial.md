@@ -332,7 +332,7 @@ Also, install the Allegro egg (`chicken-install -sudo allegro`). I added the
 following lines near the top to import the Allegro bindings (and the chicken
 memory module, which we'll also use) and initialize Allegro.
 
-````scheme
+```scheme
 (import (prefix allegro "al:"))
 (import (chicken memory))
 
@@ -342,7 +342,7 @@ memory module, which we'll also use) and initialize Allegro.
 (unless (al:init) (print "Could not initialize Allegro."))
 (unless (al:audio-addon-install) (print "Could not initialize sound."))
 (al:reserve-samples 0)
-````
+```
 
 The Allegro egg is accompanied by a couple of examples but no examples showing
 the use of the audio addon. The Allegro library itself comes with an [example

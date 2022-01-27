@@ -60,14 +60,14 @@ If using IUP from its native C, attribute setting is a separate step from
 object construction. The Scheme bindings add a little syntactic sugar that
 allow specifying your entire UI as an S-expression. Attribute names are
 keywords which can be passed directly to widget constructors along with child
-widgets. You can look up what attributes a widget accepts in the [original C
-documentation](https://www.tecgraf.puc-rio.br/iup/). In Chicken, keywords can
-be written with either a leading or trailing colon. For the examples in this
-tutorial, a trailing colon is used.
+widgets. The attributes have a trailing colon. You can look up what attributes
+a widget accepts in the [original C
+documentation](https://www.tecgraf.puc-rio.br/iup/).
 
 ```scheme
 (import iup)
 
+; Main window
 (define dlg
   (dialog
     title: "Bleep"
@@ -93,6 +93,7 @@ placing a slider within this `vbox`.
     value: 440
     expand: 'Yes))
 
+; Main window
 (define dlg
   (dialog
     title: "Bleep"
@@ -177,6 +178,12 @@ Underneath the slider is a spin box showing the current frequency and buttons
 to increase/decrease the frequency by one octave.
 
 ```scheme
+(define frequency-field
+  (textbox
+    spin: 'Yes
+    spinmin: *min-frequency*
+    spinmax: *max-frequency*
+    spinvalue: 440))
 (define frequency-controls
   (hbox
     alignment: 'ACENTER
@@ -186,11 +193,7 @@ to increase/decrease the frequency by one octave.
     (hbox
       alignment: 'ACENTER
       gap: 5
-      (textbox
-        spin: 'Yes
-        spinmin: *min-frequency*
-        spinmax: *max-frequency*
-        spinvalue: 440)
+      frequency-field
       (label "Hz"))
     (button title: '>)))
 
@@ -211,106 +214,94 @@ In IUP a spin box is just a text box that has the `spin` attribute set to
 doesn't do anything. If you click the buttons or slide the slider, nothing
 happens. Widgets also take callbacks. Callbacks are specified just like
 attributes and are functions that take one or more arguments, usually self,
-which is the widget to which the callback belongs, and return a symbol:
-usually `'default` but also `'close` to close a dialog or others such as
-`'ignore` and `'continue`. The names of callbacks that a widget accepts and
-their arguments can be looked up in the [original C
-documentation](https://www.tecgraf.puc-rio.br/iup/).
-
-If we add a command to the slider, that command will be called each time the
-slider is moved.
-
-```scheme
-(define slider (tk 'create-widget 'scale 'from: *min-position* 'to: *max-position*
-                   'command: (lambda (x) (frequency-int 'set (position->frequency x)))))
-```
-
-The command for the slider takes one argument that indicates the new value of
-the slider. The spin box does have a `command` option, but the command is only
-called when the value is changed by clicking the up or down arrow, not when the
-value is changed by other means such as typing a frequency into the field. Tk
-has a `bind` command (the Scheme `tk/bind` function) that allows binding
-functions to an event on a widget. We'll bind our callback to the `KeyRelase`
-event. The `tk/bind` function takes up to three arguments. The first is the
-widget to bind to (or a tag created with `tk/bindtags` to apply the binding to
-multiple widgets). The second is the event pattern. The event pattern is
-surrounded by angle brackets and can specify modifiers, event types, and more.
-You can find detailed documentation on the event pattern in the [Tcl/Tk
-documentation](https://www.tcl.tk/man/tcl8.6/TkCmd/bind.htm). The third is a
-lambda expression to associate with the event.
+which is the widget to which the callback belongs, and return a symbol: usually
+`'default` but also `'close` to close a dialog or others such as `'ignore` and
+`'continue`. The names of callbacks that a widget accepts and their arguments
+can be looked up in the [original C
+documentation](https://www.tecgraf.puc-rio.br/iup/). Both the slider/valuator
+and the spin box have a `valuechanged-cb` callback (converted from
+`valuechanged_cb` in the original C API).
 
 ```scheme
-(tk/bind frequency-int '<KeyRelease> (lambda ()
-  ; If frequency value is a valid number, set slider to current value
-  (let ((numified (string->number (frequency-int 'get))))
-    (when numified
-      (slider 'configure 'value: (frequency->position numified))))))
+(define slider
+  (valuator
+    min: *min-position*
+    max: *max-position*
+    value: (frequency->position 440)
+    expand: 'Yes
+    valuechanged-cb: (lambda (self)
+      (attribute-set! frequency-field spinvalue:
+        (position->frequency (string->number (attribute self value:))))
+      'default)))
+(define frequency-field
+  (textbox
+    spin: 'Yes
+    spinmin: *min-frequency*
+    spinmax: *max-frequency*
+    spinvalue: 440
+    valuechanged-cb: (lambda (self)
+      (attribute-set! slider value:
+        (frequency->position (string->number (attribute self spinvalue:)))))))
 ```
 
-Wire the buttons up to callback functions called `decrease-octave` and
-`increase-octave`. An [octave](https://en.wikipedia.org/wiki/Octave) is "the
-interval between one musical pitch and another with double its frequency."
+The `attribute` and `attribute-set` functions get the value of an attribute and
+set the value of an attribute, respectively. The first argument to each
+function is a widget, the second an attribute. When setting an attribute, you
+also provide an additional argument with the new value for the attribute.
+Attribute values are always returned as strings. Our logarithmic conversion
+functions take numbers, so we have to convert the attribute string to a number
+with `string->number`.
+
+Wire the `action` callbacks of the buttons up to functions called
+`decrease-octave` and `increase-octave`. An
+[octave](https://en.wikipedia.org/wiki/Octave) is "the interval between one
+musical pitch and another with double its frequency."
 
 ```scheme
 ; Set frequency slider and display
 (define (set-frequency freq)
   (when (and (>= freq *min-frequency*) (<= freq *max-frequency*))
-    (slider 'configure 'value: (frequency->position freq))
-    (frequency-int 'set freq)))
-
+    (attribute-set! slider value: (frequency->position freq))
+    (attribute-set! frequency-field value: freq)))
 ; Buttons increase and decrease frequency by one octave
 (define (adjust-octave modifier)
-  (set-frequency (* (string->number (frequency-int 'get)) modifier)))
-(define (decrease-octave) (adjust-octave 0.5))
-(define (increase-octave) (adjust-octave 2))
+  (set-frequency (* (string->number (attribute frequency-field spinvalue:)) modifier)))
+(define (decrease-octave self) (adjust-octave 0.5))
+(define (increase-octave self) (adjust-octave 2))
 ```
 
-If you slide the slider, the text field updates accordingly. If you type a
-number in the text field, the slider updates accordingly. All good, right? What
-if a user (and you know they will) enters a number higher than 20,000 or a
-letter?
-
-Let's extend the function that returns our labeled spin box to bind a
-validation function to the `FocusOut` event on the spin box. The spin box does
-have a `validatecommand` option, but I wasn't able to get it working. I looked
-through the examples that have come with the various variations of PS/Tk and
-couldn't find a single example of a spin box with a `validatecommand`. I even
-looked at the source code for
-[Bintracker](https://github.com/bintracker/bintracker/), a chiptune audio
-workstation written in Chicken Scheme with a PS/Tk GUI and developed by the
-current maintainer of the PS/Tk egg. Even it binds a `validate-new-value`
-function to the `Return` and `FocusOut` events of the spin box rather than
-using `validatecommand`.
+Let's use another spin box to specify the duration of the beep in
+milliseconds.:
 
 ```scheme
-; Create a spin box with a units label
-; Returns frame widget encompassing both spin box and label and the spin box
-; widget itself. This way you can access the value of the spin box.
-; e.g. (define-values (box-with-label just-box) (units-spinbox 1 12 6 "inches"))
-(define (units-spinbox from to initial units)
-  (let* ((container (tk 'create-widget 'frame))
-         (spinbox (container 'create-widget 'spinbox 'from: from 'to: to
-                             'width: (+ 4 (string-length (number->string to)))))
-         (label (container 'create-widget 'label 'text: units)))
-    (spinbox 'set initial)
-    (tk/bind spinbox '<FocusOut> (lambda ()
-      (let ((current-value (string->number (spinbox 'get))))
-        (unless (and current-value
-                     (>= current-value from)
-                     (<= current-value to))
-          (spinbox 'set from)
-          ; Also reset slider position to make sure it still matches display
-          (slider 'configure 'value: (frequency->position (string->number (frequency-int 'get))))))))
-    (tk/pack spinbox label 'side: 'left 'padx: 2)
-    (values container spinbox)))
-```
+(define duration-field
+  (textbox
+    spin: 'Yes
+    spinmin: 1
+    spinmax: 600000 ; 10 minutes
+    spinvalue: 440))
+(define general-controls
+  (hbox
+    alignment: 'ACENTER
+    gap: 25
+    margin: '0x0
+    (hbox
+      alignment: 'ACENTER
+      gap: 5
+      duration-field
+      (label "ms"))))
 
-We'll also use this function to create a field to specify the duration of the
-beep in milliseconds:
-
-```scheme
-(define-values (duration-ext duration-int) (units-spinbox 1 600000 200 "ms"))
-(tk/grid duration-ext 'row: 2 'column: 0 'padx: 20 'pady: 20)
+; Main window
+(define dlg
+  (dialog
+    title: "Bleep"
+    (vbox
+      alignment: 'ACENTER
+      gap: 25
+      margin: '25x25
+      slider
+      frequency-controls
+      general-controls)))
 ```
 
 Frequency is rather abstract. Let's also give the user the ability to select a
@@ -334,12 +325,26 @@ drop-down menu, we'll look up the frequency in the association list and set it
 using the `set-frequency` helper function we created for the octave buttons.
 
 ```scheme
-(define note-frame (tk 'create-widget 'frame))
-(define note (note-frame 'create-widget 'combobox 'width: 2 'values: '("A" "B" "C" "D" "E" "F" "G")))
-(tk/bind note '<<ComboboxSelected>> (lambda () (set-frequency (cadr (assoc (note 'get) notes)))))
-(define note-label (note-frame 'create-widget 'label 'text: "♪"))
-(tk/pack note-label note 'side: 'left 'padx: 2)
-(tk/grid note-frame 'row: 2 'column: 2 'padx: 20 'pady: 20)
+(define general-controls
+  (hbox
+    alignment: 'ACENTER
+    gap: 25
+    margin: '0x0
+    (hbox
+      alignment: 'ACENTER
+      gap: 5
+      duration-field
+      (label "ms"))
+    (hbox
+      alignment: 'ACENTER
+      gap: 5
+      (label "♪")
+      (listbox
+        #:1 "A" #:2 "B" #:3 "C" #:4 "D" #:5 "E" #:6 "F" #:7 "G"
+        value: 1
+        dropdown: 'Yes
+        action: (lambda (self text item state)
+          (set-frequency (cadr (assoc text notes))))))))
 ```
 
 Now, let's make some noise. There are Chicken Scheme
@@ -354,7 +359,7 @@ Also, install the Allegro egg (`chicken-install -sudo allegro`). I added the
 following lines near the top to import the Allegro bindings (and the chicken
 memory module, which we'll also use) and initialize Allegro.
 
-````scheme
+```scheme
 (import (prefix allegro "al:"))
 (import (chicken memory))
 
@@ -364,7 +369,7 @@ memory module, which we'll also use) and initialize Allegro.
 (unless (al:init) (print "Could not initialize Allegro."))
 (unless (al:audio-addon-install) (print "Could not initialize sound."))
 (al:reserve-samples 0)
-````
+```
 
 The Allegro egg is accompanied by a couple of examples but no examples showing
 the use of the audio addon. The Allegro library itself comes with an [example
