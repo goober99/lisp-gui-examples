@@ -424,7 +424,7 @@ pointer. A pointer refrences a byte of memory. We can reference the preceding
 or following byte by subtracting or adding 1 to the address. Since we are
 filling the array with 32-bit floats, and 32 bits is 4 bytes, we want to
 increment the address by 4 each time. Then we can set the value of the current
-location with pointer-f32-set!.
+location with `pointer-f32-set!`.
 
 Then you just need to feed Allegro buffers of 1,024 samples at a time. The
 [basic formula for a sine

@@ -87,6 +87,57 @@ $ ecl -load quicklisp.lisp
 $ eql5 bleep.lisp
 ```
 
+### iup (Chicken Scheme/IUP)
+
+![Screenshot](screenshots/iup.png?raw=true "iup screenshot")
+
+Chicken Scheme and Allegro are available in the repository of most Linux
+distros. Install it from your distro's repo. For Debian/Ubuntu:
+
+```console
+$ sudo apt install chicken-bin liballegro5-dev
+```
+
+IUP doesn't appear to be packaged for many Linux distros, but there are
+pre-compiled binaries available for download on the IUP website. In addition to
+[IUP](https://www.tecgraf.puc-rio.br/iup/en/download.html), you also need to
+download two other libraries also developed by Tecgraf Institute at PUC-Rio
+called [IM](https://www.tecgraf.puc-rio.br/im/en/download.html) and
+[CD](https://www.tecgraf.puc-rio.br/cd/en/download.html). Position yourself in
+the directory where you downloaded the tarballs and:
+
+```console
+$ mkdir iup
+$ tar -xpvf iup-*_lib.tar.gz -C iup
+$ sudo iup/install
+$ sudo iup//install_dev
+$ cd ~/Development/iup/ftgl/lib/Linux*/*
+$ sudo cp iup/ftgl/lib/Linux*/* /usr/lib64
+$ mkdir im
+$ tar -xpvf im-*_lib.tar.gz -C im
+$ sudo im/install
+$ sudo im/install_dev
+$ mkdir cd
+$ tar -xpvf cd-*_lib.tar.gz -C cd
+$ sudo cd/install
+$ sudo cd/install_dev
+```
+
+The example uses the Allegro egg to generate the tone. You can install it and
+the iup egg with the `chicken-install` utility that comes with Chicken Scheme.
+The IUP install scripts install the libraries in non-standard paths on Debian.
+You can use the `$CSC_OPTIONS` and `$LD_LIBRARY` environment variables to tell
+Chickn where to find them.
+
+Navigate to the `iup` example subdirectory and execute bleep.scm with Chicken
+Scheme.
+
+```console
+$ CSC_OPTIONS='-I/usr/include/iup -I/usr/include/im -I/usr/include/cd -L/usr/lib64' chicken-install -sudo iup allegro
+$ cd iup
+$ LD_LIBRARY_PATH=/usr/lib64 csi bleep.scm
+```
+
 ### LambdaNative (Gambit Scheme)
 
 ![Screenshot](screenshots/lambdanative.png?raw=true "LambdaNative screenshot")

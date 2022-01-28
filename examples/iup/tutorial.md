@@ -5,7 +5,7 @@ soon" features. There are bindings for various programming languages including
 a Chicken egg. Instead of building yet another calculator, let's build a GUI
 for generating a tone.
 
-![Screenshot](../../screenshots/pstk.png?raw=true "Example screenshot")
+![Screenshot](../../screenshots/iup.png?raw=true "Example screenshot")
 
 You'll need Chicken Scheme installed. It's available in the repositories of
 most Linux distros. You'll also need the IUP libraries installed before you can
@@ -279,7 +279,7 @@ milliseconds.:
     spin: 'Yes
     spinmin: 1
     spinmax: 600000 ; 10 minutes
-    spinvalue: 440))
+    spinvalue: 200))
 (define general-controls
   (hbox
     alignment: 'ACENTER
@@ -357,18 +357,36 @@ library. Make sure you also install the header files. In some Linux distros,
 these are split into a separate package (e.g. `liballegro5-dev` on Debian).
 Also, install the Allegro egg (`chicken-install -sudo allegro`). I added the
 following lines near the top to import the Allegro bindings (and the chicken
-memory module, which we'll also use) and initialize Allegro.
+memory module, which we'll also use).
 
 ```scheme
 (import (prefix allegro "al:"))
 (import (chicken memory))
 
 (define +pi+ 3.141592)
+```
+
+You must place the code to initialize Allegro between the function to `show`
+the main IUP dialog and starting the IUP `main-loop`. If it comes before
+`show`, the program will die with a `segmentation violation`, and it can't come
+after the `main-loop`, because it would never get executed until the window
+closed.
+
+```scheme
+; Display GUI
+(show dlg)
 
 ; Initialize Allegro and audio addon
+; Must be initialized afer showing the main dialog but before starting the main
+; loop or else program will die with a segmentation violation.
 (unless (al:init) (print "Could not initialize Allegro."))
 (unless (al:audio-addon-install) (print "Could not initialize sound."))
 (al:reserve-samples 0)
+
+; Start IUP main loop
+(main-loop)
+(destroy! dlg)
+(exit 0)
 ```
 
 The Allegro egg is accompanied by a couple of examples but no examples showing
@@ -451,7 +469,7 @@ pointer. A pointer refrences a byte of memory. We can reference the preceding
 or following byte by subtracting or adding 1 to the address. Since we are
 filling the array with 32-bit floats, and 32 bits is 4 bytes, we want to
 increment the address by 4 each time. Then we can set the value of the current
-location with pointer-f32-set!.
+location with `pointer-f32-set!`.
 
 Then you just need to feed Allegro buffers of 1,024 samples at a time. The
 [basic formula for a sine
@@ -465,14 +483,13 @@ where *A* is amplitude, *f* is frequency, and *t* is time.
 Wire this up to a play button, and you're ready to make some noise.
 
 ```scheme
-(define play-button (tk 'create-widget 'button 'text: "Play" 'command: (lambda ()
-  (generate-tone (string->number (frequency-int 'get)) (string->number (duration-int 'get))))))
-(tk/grid play-button 'row: 2 'column: 1 'padx: 20 'pady: 20)
+(button
+  title: "Play"
+  action: (lambda (self)
+    (generate-tone (attribute frequency-field spinvalue:)
+                   (attribute duration-field spinvalue:))))
 ```
 
-Tk has been around a long time, and it shows. While it is stable and highly
-portable, even with recent improvements, it just looks a little dated. At least
-on Linux, none of the themes I tried really fit in. There were always
-differences that made the Tk GUI stick out like a sore thumb. If you're
-building an internal tool where it doesn't really matter how pretty it is, you
-can get Tk to work with a variety of Schemes in a variety of places.
+The [documentation for the iup egg](https://wiki.call-cc.org/eggref/5/iup) is
+pretty sparse, but [this tutorial](https://wiki.call-cc.org/iup-tutor) on using
+the iup egg was indispensable in writing the above tutorial.
