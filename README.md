@@ -110,8 +110,7 @@ the directory where you downloaded the tarballs and:
 $ mkdir iup
 $ tar -xpvf iup-*_lib.tar.gz -C iup
 $ sudo iup/install
-$ sudo iup//install_dev
-$ cd ~/Development/iup/ftgl/lib/Linux*/*
+$ sudo iup/install_dev
 $ sudo cp iup/ftgl/lib/Linux*/* /usr/lib64
 $ mkdir im
 $ tar -xpvf im-*_lib.tar.gz -C im

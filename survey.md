@@ -37,7 +37,7 @@ to be able to make a reasonable assessment of each GUI library.
 
 ### Racket
 
-**Links:** [Tutorial](https://blog.matthewdmiller.net/learn-racket-by-example-gui-programming) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/racket)<br>
+**Links:** [Tutorial](https://dev.to/goober99/learn-racket-by-example-gui-programming-3epm) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/racket)<br>
 **Lisp Dialect:** Racket / **GUI Toolkit:** Native (GTK on Linux)
 
 <img align="right" width="320" height="205" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/racket-activitylog2.png" />
@@ -85,7 +85,7 @@ a declarative DSL.
 
 ### Cljfx
 
-Links: [Tutorial](https://blog.matthewdmiller.net/learn-clojure-by-example-javafx-gui-with-cljfx) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/cljfx)<br>
+Links: [Tutorial](https://dev.to/goober99/learn-clojure-by-example-javafx-gui-with-cljfx-2f3b) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/cljfx)<br>
 **Lisp Dialect:** Clojure / **GUI Toolkit:** JavaFX
 
 <img align="right" width="350" height="242" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/cljfx-defold-editor.png" />
@@ -140,7 +140,7 @@ want to use a Lisp other than Racket or Clojure.
 
 ### cl-cffi-gtk
 
-Links: [Tutorial](https://blog.matthewdmiller.net/) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/cl-cffi-gtk)<br>
+Links: [Tutorial](https://dev.to/goober99/learn-common-lisp-by-example-gtk-gui-with-sbcl-5e5c) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/cl-cffi-gtk)<br>
 **Lisp Dialect:** Common Lisp / **Common Lisp Implementation:** SBCL (and probably others) / **GUI Toolkit:** GTK
 
 <img align="right" width="320" height="254" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/clcffigtk-nyxt.png" />
@@ -186,7 +186,7 @@ GUI built with Glade and loaded with cl-cffi-gtk.
 
 ### EQL5
 
-Links: [Tutorial](https://blog.matthewdmiller.net/learn-common-lisp-by-example-qt-gui-with-eql5) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/eql5)<br>
+Links: [Tutorial](https://dev.to/goober99/learn-common-lisp-by-example-qt-gui-with-eql5-1lmn) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/eql5)<br>
 **Lisp Dialect:** Common Lisp / **Common Lisp Implementation:** ECL / **GUI Toolkit:** Qt
 
 <img align="right" width="396" height="240" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/eql5-gym.png" />
@@ -253,9 +253,46 @@ really want to use Common Lisp instead of Racket or Clojure, EQL5 is a solid
 choice, but I'd still recommend Racket or Cljfx if you're starting a new
 project from scratch and can choose the language.
 
+### IUP
+
+Links: [Tutorial](https://dev.to/goober99) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/iup)<br>
+**Lisp Dialect:** Scheme / **Scheme Implementation:** Chicken / **GUI Toolkit:** Native (GTK on Linux)
+
+<img align="right" width="320" height="324" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/iup-megatest.png" />
+
+IUP is a cross-platform GUI toolkit that uses native controls. It uses GTK on
+Linux and, well, GTK on macOS too. According to the
+[roadmap](https://www.tecgraf.puc-rio.br/iup/en/to_do.html), there is a macOS
+native driver in the works, but it looks like one of those perpetually "coming
+soon" features. The last several releases didn't come with any pre-compiled
+binaries for macOS either. I'm not sure if there is an issue preventing recent
+releases from building on macOS or if they just don't have any developers with
+macOS to contribute a macOS build. If macOS is one of the platforms you're
+targeting, IUP would not be the toolkit to choose.
+
+A Lisp developer criticizing a project for lack of widespread adoption is like
+throwing rocks in a glass house, but IUP has been in development since the
+1990s yet doesn't appear to be in the repos of any major Linux distro. It is
+liberally licensed under the MIT license, so might be able to static link it
+and include it with your app but evaluating how feasible or difficult that
+would have been with Chicken Scheme was outside the scope of my quick tutorial.
+
+IUP supports a declarative language called
+[LED](https://www.tecgraf.puc-rio.br/iup/en/led.html) for defining your UI, but
+the Chicken egg provides a way to specify your entire UI as an S-expression
+which is much more elegant than the somewhat awkward syntax of LED. IUP comes
+with good [documentation](https://www.tecgraf.puc-rio.br/iup/), but all the
+examples are in C and Lua.
+
+Given the limited number of platforms it supports (support for macOS is iffy at
+best), I don't see any compelling reason to choose IUP over any of the other
+toolkits in this survey. It doesn't even have the ubiquity of Tk going for it
+which you could probably get to work on just about any platform with any Lisp
+implementation in a pinch.
+
 ### LambdaNative
 
-Links: [Tutorial](https://blog.matthewdmiller.net/learn-lambdanative-by-example-desktop-gui) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/lambdanative)<br>
+Links: [Tutorial](https://dev.to/goober99/learn-lambdanative-by-example-desktop-gui-277l) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/lambdanative)<br>
 **Lisp Dialect:** Scheme / **Scheme Implementation:** Gambit / **GUI Toolkit:** Custom (rendered with OpenGL)
 
 <img align="right" width="480" height="320" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/lambdanative-phone-oximeter.jpg" />
@@ -322,7 +359,7 @@ from it for desktop development.
 
 ### Tk
 
-Links: [Tutorial](https://blog.matthewdmiller.net/learn-scheme-by-example-tk-gui-with-chicken-scheme) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/pstk)<br>
+Links: [Tutorial](https://dev.to/goober99/learn-scheme-by-example-tk-gui-with-chicken-scheme-3cn9) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/pstk)<br>
 **Lisp Dialect:** Scheme / **Scheme Implementation:** Chicken (and most other R5RS-compatible implementations) / **Bindings:** PS/Tk<br>
 **Lisp Dialect:** Common Lisp / **Bindings:** LTK and nodgui
 
