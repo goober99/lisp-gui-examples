@@ -256,7 +256,8 @@ project from scratch and can choose the language.
 ### IUP
 
 Links: [Tutorial](https://dev.to/goober99) / [Code](https://github.com/goober99/lisp-gui-examples/tree/master/examples/iup)<br>
-**Lisp Dialect:** Scheme / **Scheme Implementation:** Chicken / **GUI Toolkit:** Native (GTK on Linux)
+**Lisp Dialect:** Scheme / **Scheme Implementation:** Chicken / **GUI Toolkit:** Native (GTK on Linux)<br>
+**Lisp Dialect:** Common Lisp / **Bindings:** lispnik/iup
 
 <img align="right" width="320" height="324" src="https://raw.githubusercontent.com/goober99/lisp-gui-examples/master/screenshots/survey/iup-megatest.png" />
 
@@ -273,8 +274,8 @@ targeting, IUP would not be the toolkit to choose.
 A Lisp developer criticizing a project for lack of widespread adoption is like
 throwing rocks in a glass house, but IUP has been in development since the
 1990s yet doesn't appear to be in the repos of any major Linux distro. It is
-liberally licensed under the MIT license, so might be able to static link it
-and include it with your app but evaluating how feasible or difficult that
+liberally licensed under the MIT license, so you might be able to static link
+it and include it with your app but evaluating how feasible or difficult that
 would have been with Chicken Scheme was outside the scope of my quick tutorial.
 
 IUP supports a declarative language called
@@ -283,6 +284,15 @@ the Chicken egg provides a way to specify your entire UI as an S-expression
 which is much more elegant than the somewhat awkward syntax of LED. IUP comes
 with good [documentation](https://www.tecgraf.puc-rio.br/iup/), but all the
 examples are in C and Lua.
+
+There are also [Common Lisp bindings for IUP](https://github.com/lispnik/iup/).
+They are described as pre-alpha but appear robust and come with numerous
+examples. Introspection is used to automatically generate the bindings. The
+latest version of IUP the bindings are compatible with is 3.29. IUP is not a
+particularly fast moving project. The latest version of is IUP 3.30, released
+on July 30, 2020 (almost two years ago at the time of this writing). Either the
+automatic generation process moving from 3.29 to 3.30 is not that automatic or
+the maintainer has lost interest.
 
 Given the limited number of platforms it supports (support for macOS is iffy at
 best), I don't see any compelling reason to choose IUP over any of the other
