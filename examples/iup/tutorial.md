@@ -464,7 +464,7 @@ conveniences atop Allegro like allowing us to pass a Scheme list or array to
 Allegro to provide the buffer of samples. Since it doesn't, we'll use the
 chicken memory module to fill the C array starting at the C pointer returned by
 `audio-stream-fragment`. We use `pointer->address` to get the address of the
-pointer. A pointer refrences a byte of memory. We can reference the preceding
+pointer. A pointer references a byte of memory. We can reference the preceding
 or following byte by subtracting or adding 1 to the address. Since we are
 filling the array with 32-bit floats, and 32 bits is 4 bytes, we want to
 increment the address by 4 each time. Then we can set the value of the current

@@ -442,6 +442,11 @@ up above this heading in the survey.
   can package your web app to look like a desktop app with Electron or other
   webview, but that's no different than what you can do with other web
   frameworks, and evaluating web frameworks is outside the scope of this survey.
+- [CommonQt](https://github.com/commonqt/commonqt)/[Qtools](https://github.com/Shinmera/qtools).
+  Qt bindings for Common Lisp. Qt 4 has been [removed from
+  Debian](https://wiki.debian.org/Qt4Removal) and [CommonQt for
+  Qt5](https://github.com/commonqt/commonqt5) doesn't look ready for consumption
+  yet. If you want to do Qt with Lisp, your best bet right now is EQL5.
 - [fn(fx)](https://github.com/fn-fx/fn-fx). Clojure wrapper of JavaFX. Last
   commit in 2019, and all GitHub issues have gone unanswered since then. See
   Cljfx, which is one of my two recommended GUI libraries, for a maintained
