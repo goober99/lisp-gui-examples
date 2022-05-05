@@ -40,8 +40,8 @@ cl-cffi-gtk (by default it will be downloaded to `~/quicklisp`).
 ; Main window
 (defvar window (make-instance 'gtk:gtk-window :type :toplevel :title "Bleep"))
 (defvar vbox (make-instance 'gtk:gtk-box :orientation :vertical
-                                         :spacing 25
-                                         :margin 25))
+                                                      :spacing 25
+                                                      :margin 25))
 
 (gtk:within-main-loop
   ; Quit program when window closed
