@@ -40,6 +40,12 @@ If the demos work, go ahead and install (`sudo make install`).
 (gtk-main)
 ```
 
+You can comment out `gtk-main`, load the file in the REPL with `(load
+"bleep.scm")`, and start the GTK event loop with `start-interactive-gtk`
+instead. This will return control to the REPL after displaying the window. This
+way you can interact with the GUI from the REPL. This can be helpful during
+development.
+
 STklos has an object system based on CLOS. You create a window by instantiating
 the `<window>` class (or `<vwindow>` for a window with an embedded vbox).
 Identifiers enclosed with angle brackets (like HTML tags) is the STklos naming
@@ -76,27 +82,27 @@ achieve this, let's use a logarithmic scale.
 I found a [Stack Overflow
 answer](https://stackoverflow.com/questions/846221/logarithmic-slider/846249#846249)
 on how to map a slider to a logarithmic scale. The code given in the answer is
-JavaScript, but it was easy enough to port to Common Lisp.
+JavaScript, but it was easy enough to port to Scheme.
 
-```lisp
+```scheme
 ; Scale used by slider
-(defparameter *min-position* 0)
-(defparameter *max-position* 2000)
+(define *min-position* 0)
+(define *max-position* 2000)
 ; Range of frequencies
-(defparameter *min-frequency* 20)
-(defparameter *max-frequency* 20000)
+(define *min-frequency* 20)
+(define *max-frequency* 20000)
 
 ; Logarithmic scale for frequency (so middle A [440] falls about in the middle)
 ; Adapted from https://stackoverflow.com/questions/846221/logarithmic-slider
 
-(defvar min-freq (log *min-frequency*))
-(defvar max-freq (log *max-frequency*))
-(defvar frequency-scale (/ (- max-freq min-freq) (- *max-position* *min-position*)))
+(define min-freq (log *min-frequency*))
+(define max-freq (log *max-frequency*))
+(define frequency-scale (/ (- max-freq min-freq) (- *max-position* *min-position*)))
 ; Convert slider position to frequency
-(defun position->frequency (position)
+(define (position->frequency position)
   (round (exp (+ min-freq (* frequency-scale (- position *min-position*))))))
 ; Convert frequency to slider position
-(defun frequency->position (freq)
+(define (frequency->position freq)
   (round (/ (- (log freq) min-freq) (+ frequency-scale *min-position*))))
 ```
 
@@ -113,16 +119,13 @@ frequency and returns the position on the slider (`frequency-position`). Now
 let's modify our slider to use `frequency->position` to convert the initial
 `value` to a slider position using our logarithmic scale.
 
-```lisp
-(defvar slider (make-instance 'gtk:gtk-scale
-                              :orientation :horizontal
-                              :draw-value nil
-                              :adjustment
-                              (make-instance 'gtk:gtk-adjustment
-                                             :value (frequency->position 440)
-                                             :lower *min-position*
-                                             :upper *max-position*
-                                             :step-increment 1)))
+```scheme
+(define slider (make <scale> #:parent window
+                             #:orientation 'horizontal
+                             #:draw-value #f
+                             #:from *min-position*
+                             #:to *max-position*
+                             #:value (frequency->position 440)))
 ```
 
 Underneath the slider is a spin button showing the current frequency and
