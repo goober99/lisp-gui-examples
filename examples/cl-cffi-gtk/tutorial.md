@@ -6,7 +6,7 @@ build a GUI for generating a tone.
 ![Screenshot](../../screenshots/clcffigtk.png?raw=true "Example screenshot")
 
 You'll need SBCL installed. It's available in the repositories of most Linux
-distros, so just install it from your distro's repo. Depending on your destkop
+distros, so just install it from your distro's repo. Depending on your desktop
 environment, you probably already have GTK installed (even if you use KDE, it's
 highly likely you already have GTK installed). If you're on Windows or macOS,
 you'll probably have to install GTK in addition to SBCL.
