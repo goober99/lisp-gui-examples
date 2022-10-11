@@ -1,89 +1,63 @@
-The cl-cffi-gtk library provides Common Lisp bindings to GTK. The library is
-developed with SBCL but should also work with Clozure CL and CLISP. For this
-tutorial, I'll be using SBCL. Instead of building yet another calculator, let's
-build a GUI for generating a tone.
+The GTKlos extension provides bindings to GTK for the STklos Scheme
+implementation. One of the selling points of STklos is easy connection to GTK.
+Instead of building yet another calculator, let's build a GUI for generating a
+tone.
 
 ![Screenshot](../../screenshots/clcffigtk.png?raw=true "Example screenshot")
 
-You'll need SBCL installed. It's available in the repositories of most Linux
-distros, so just install it from your distro's repo. Depending on your destkop
-environment, you probably already have GTK installed (even if you use KDE, it's
-highly likely you already have GTK installed). If you're on Windows or macOS,
-you'll probably have to install GTK in addition to SBCL.
-
-The Common Lisp bindings to GTK can be installed with
-[Quicklisp](https://www.quicklisp.org/). If you don't already have Quicklisp
-installed, it's painless. See the Quicklisp website for more details, but
-here's an example of installing Quicklisp on Debian and configuring SBCL. The
-steps should be the same for any Linux distro and macOS.
+You'll need STklos installed. If it's not available from your distro's repo,
+it's easy to compile. Depending on your desktop environment, you probably
+already have GTK installed (even if you use KDE, it's highly likely you already
+have GTK installed). Presently, STklos only runs on Linux and macOS, so it's not
+very cross-platform. More useful for slapping a GUI on any Scheme Unix utilities
+you've written. You'll also need to compile the GTKlos extension. It's included
+in the source tree of STklos, so after compiling STklos, you can `cd` into the
+GTKlos subdirectory and compile it. [Download](https://stklos.net/download.html)
+the most recent version of STklos, then extract, and compile:
 
 ```console
-$ curl -O https://beta.quicklisp.org/quicklisp.lisp
-$ sbcl --load quicklisp.lisp
-> (quicklisp-quickstart:install)
-> (ql:add-to-init-file)
+$ tar -xvf stklos-*.tar.gz
+$ cd stklos*/
+$ ./configure
+$ make
+$ sudo make install
+$ cd extensions/gtklos
+$ export STKLOS_GTK_DIR=/usr/lib/x86_64-linux-gnu
+$ make
+$ ./run-demos
 ```
 
-The "proper" way to include a dependency would be to use
-[ASDF](https://common-lisp.net/project/asdf/) and create a `.asd` file for the
-project. Since this is a quick tutorial, I'll use with `ql:quickload`.
+If the demos work, go ahead and install (`sudo make install`).
 
-```lisp
-(ql:quickload :cl-cffi-gtk)
+```scheme
+; Load GTklos
+(require "gtklos")
+(import GTKLOS)
 
-```
-
-The first time you run `bleep.lisp`, it will take awhile as Quicklisp downloads
-cl-cffi-gtk (by default it will be downloaded to `~/quicklisp`).
-
-```lisp
 ; Main window
-(defvar window (make-instance 'gtk:gtk-window :type :toplevel :title "Bleep"))
-(defvar vbox (make-instance 'gtk:gtk-box :orientation :vertical
-                                                      :spacing 25
-                                                      :margin 25))
+(define window (make <vwindow> #:title "Bleep" #:border-width 25))
 
-(gtk:within-main-loop
-  ; Quit program when window closed
-  (gobject:g-signal-connect window "destroy" (lambda (widget)
-    (declare (ignore widget))
-    (gtk:leave-gtk-main)))
-  ; Display GUI
-  (gtk:gtk-container-add window vbox)
-  (gtk:gtk-widget-show-all window))
+(gtk-main)
 ```
 
-Although written in C, GTK is object oriented. It uses a portable object system
-called GObject. GObject classes are wrapped with corresponding Lisp classes.
-You create a window by instantiating the `gtk:gtk-window` class.
+STklos has an object system based on CLOS. You create a window by instantiating
+the `<window>` class (or `<vwindow>` for a window with an embedded vbox).
+Identifiers enclosed with angle brackets (like HTML tags) is the STklos naming
+convention for classes. Documentation for GTKlos is almost non-existent. The
+best way to find out what widgets are available it to browse the
+[source](https://github.com/egallesio/STklos/tree/master/extensions/gtklos/lib/stklos/widgets)
+for the widgets. Then you can do `(describe <class>)` (e.g. `(describe
+<window>)`) to get a list of slots and methods supported by that class. Now
+let's add some additional widgets between creating the window and starting the
+GTK main loop.
 
-The `gtk:gtk-box` is a packing widget. A `gtk:gtk-window` can only contain one
-widget at a time. Packing widgets are you used to pack widgets together and
-arrange them.
-
-The `gtk:within-main-loop` macro does the work of setting up a GTK main loop.
-The macro does some additional bookkeeping to run the GUI in a separate thread.
-This is cool, because even after the window appears, you can still type
-commands into the REPL to interact with the program (e.g. query the properties
-of a widget). With most of the Lisp GUI libraries I've tried out, the GUI takes
-over completely once it is launched, and you have to close the window before
-being able to type commands into the REPL again.
-
-Then add our packing widget to the window, and we're ready to launch our
-window. Now let's add some more widgets to it.
-
-```lisp
-(defvar slider (make-instance 'gtk:gtk-scale
-                              :orientation :horizontal
-                              :draw-value nil
-                              :width-request 200
-                              :adjustment
-                              (make-instance 'gtk:gtk-adjustment
-                                             :value 440
-                                             :lower 20
-                                             :upper 20000
-                                             :step-increment 1)))
-(gtk:gtk-box-pack-start vbox slider)
+```scheme
+(define slider (make <scale> #:parent window
+                             #:orientation 'horizontal
+                             #:draw-value #f
+                             #:from 20
+                             #:to 20000
+                             #:value 440))
 ```
 
 The range of frequencies audible by humans is typically between 20 Hz and 20
@@ -91,9 +65,9 @@ KHz (we lose the ability to hear some of those higher frequencies as we age).
 The [musical note A above middle
 C](https://en.wikipedia.org/wiki/A440_(pitch_standard)) is 440 Hz. Since A4
 serves as a general tuning standard, it seems like a sensible default, but if
-you run the above in SBCL, this is what you'll see:
+you run the above in STklos, this is what you'll see:
 
-![Slider](../../screenshots/clcffigtk-linearslider.png?raw=true "Slider showing 440 using a linear scale")
+![Slider](../../screenshots/gtklos-linearslider.png?raw=true "Slider showing 440 using a linear scale")
 
 The scale of 20 to 20,000 is so large that 440 doesn't appear to move the
 slider at all. Ideally, 440 would fall about the middle of the slider. To

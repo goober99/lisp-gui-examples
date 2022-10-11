@@ -12,5 +12,4 @@
                              #:to 20000
                              #:value 440))
 
-;(start-interactive-gtk)
 (gtk-main)
