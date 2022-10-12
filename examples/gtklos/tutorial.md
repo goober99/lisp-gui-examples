@@ -142,15 +142,11 @@ to increase/decrease the frequency by one octave.
 
 The `<hbox>` is an invisible widget that helps with layout. At this point, we
 are starting to have a nice looking interface, but it doesn't do anything. If
-you click the buttons or slide the slider, nothing happens.
+you click the buttons or slide the slider, nothing happens. The widgets have a
+`command` slot that wires the widgets up to a function. If we add a command to
+the slider, that command will be called each time the slider is moved.
 
-Widgets emit signals, and callback functions can be connected to these signals.
-If we connect a callback function to the `change-value` signal of the slider,
-that function will be called whenever the slider is moved. The arguments a
-callback function takes are dependent on the signal being handled. The
-adjustment object of the spin button has a `value-changed` signal.
-
-```lisp
+```scheme
 ; Link slider to text field display of frequency
 (gobject:g-signal-connect slider "change-value"
   ; Connect to change-value signal of slider instead of value-changed signal of

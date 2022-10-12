@@ -208,7 +208,7 @@ adjustment object of the spin button has a `value-changed` signal.
   ; Connect to change-value signal of slider instead of value-changed signal of
   ; its corresponding adjustment object so that frequency will only be updated
   ; when interactively moved avoiding rounding differences between slider and
-  ; sping button.
+  ; spin button.
   (lambda (range scroll value)
     (declare (ignore range scroll))
     (setf (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field))
