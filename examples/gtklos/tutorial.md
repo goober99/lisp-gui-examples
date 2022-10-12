@@ -128,51 +128,22 @@ let's modify our slider to use `frequency->position` to convert the initial
                              #:value (frequency->position 440)))
 ```
 
-Underneath the slider is a spin button showing the current frequency and
-buttons to increase/decrease the frequency by one octave.
+Underneath the slider is a text field showing the current frequency and buttons
+to increase/decrease the frequency by one octave.
 
-```lisp
-; Create a spin button with a units label
-; Arguments: from - number, lower bound of range),
-;            to - number, upper bound of range
-;            initial - number, initial value of spin button
-;            units - string, label after spin button
-; Optional Arguments: digits - number <= 20, number of decimal places to show
-; Return value: The gtk-spin-button instance inside the container
-(defun units-spin-button (from to initial units &key (digits 0))
-  (let ((container (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 10))
-        (spin-button (make-instance 'gtk:gtk-spin-button
-                                    :digits digits
-                                    :adjustment
-                                    (make-instance 'gtk:gtk-adjustment
-                                                   :value initial
-                                                   :lower from
-                                                   :upper to
-                                                   :step-increment 1)))
-        (label (make-instance 'gtk:gtk-label :label units)))
-    (gtk:gtk-box-pack-start container spin-button :fill nil)
-    (gtk:gtk-box-pack-start container label :fill nil)
-    ; Return the container holding the spin button and label
-    spin-button))
-
-(defvar frequency-field (units-spin-button *min-frequency* *max-frequency* 440 "Hz" :digits 2))
-
-(defvar lower-button (make-instance 'gtk:gtk-button :label "<"))
-(defvar higher-button (make-instance 'gtk:gtk-button :label ">"))
-
-(defvar frequency-box (make-instance 'gtk:gtk-box :orientation :horizontal :spacing 25))
-(gtk:gtk-box-pack-start frequency-box lower-button :fill nil)
-(gtk:gtk-box-pack-start frequency-box (gtk:gtk-widget-parent frequency-field) :fill nil)
-(gtk:gtk-box-pack-start frequency-box higher-button :fill nil)
-(gtk:gtk-box-pack-start vbox frequency-box)
+```scheme
+(define frequency-pane (make <hbox> #:parent window #:spacing 25))
+(define lower-button (make <button> #:parent frequency-pane #:text "<"))
+(define frequency-control (make <hbox> #:parent frequency-pane #:spacing 10))
+(define frequency-field (make <entry> #:parent frequency-control #:value "440"))
+(define frequency-label (make <label> #:parent frequency-control #:text "Hz"))
+(define higher-button (make <button> #:parent frequency-pane #:text ">"))
 ```
 
-We can also use boxes to help with layout. I created a function that I can
-reuse later to generate the spin button and label and pack them together in a
-box.
+The `<hbox>` is an invisible widget that helps with layout. At this point, we
+are starting to have a nice looking interface, but it doesn't do anything. If
+you click the buttons or slide the slider, nothing happens.
 
-At this point, we are starting to have a nice looking interface, but it doesn't
-do anything. If you click the buttons or slide the slider, nothing happens.
 Widgets emit signals, and callback functions can be connected to these signals.
 If we connect a callback function to the `change-value` signal of the slider,
 that function will be called whenever the slider is moved. The arguments a
