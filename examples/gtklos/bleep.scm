@@ -22,6 +22,12 @@
 (define (frequency->position freq)
   (round (/ (- (log freq) min-freq) (+ frequency-scale *min-position*))))
 
+; Link slider to text field display of frequency
+(define (adjust-frequency widget event)
+  (set! (value frequency-field) (number->string (position->frequency (value widget)))))
+(define (adjust-slider widget event)
+  (set! (value slider) (frequency->position (string->number (value widget)))))
+
 ; Main window
 (define window (make <vwindow> #:title "Bleep" #:border-width 25 #:spacing 25))
 
@@ -30,7 +36,8 @@
                              #:draw-value #f
                              #:from *min-position*
                              #:to *max-position*
-                             #:value (frequency->position 440)))
+                             #:value (frequency->position 440)
+                             #:command adjust-frequency))
 
 (define frequency-pane (make <hbox> #:parent window #:spacing 25))
 (define lower-button (make <button> #:parent frequency-pane #:text "<"))
@@ -38,5 +45,8 @@
 (define frequency-field (make <entry> #:parent frequency-control #:value "440"))
 (define frequency-label (make <label> #:parent frequency-control #:text "Hz"))
 (define higher-button (make <button> #:parent frequency-pane #:text ">"))
+
+;(event-connect slider "change-value" adjust-frequency)
+(event-connect frequency-field "key-release-event" adjust-slider)
 
 (gtk-main)
