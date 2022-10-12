@@ -23,7 +23,7 @@
   (round (/ (- (log freq) min-freq) (+ frequency-scale *min-position*))))
 
 ; Main window
-(define window (make <vwindow> #:title "Bleep" #:border-width 25))
+(define window (make <vwindow> #:title "Bleep" #:border-width 25 #:spacing 25))
 
 (define slider (make <scale> #:parent window
                              #:orientation 'horizontal
@@ -31,5 +31,12 @@
                              #:from *min-position*
                              #:to *max-position*
                              #:value (frequency->position 440)))
+
+(define frequency-pane (make <hbox> #:parent window #:spacing 25))
+(define lower-button (make <button> #:parent frequency-pane #:text "<"))
+(define frequency-control (make <hbox> #:parent frequency-pane #:spacing 10))
+(define frequency-field (make <entry> #:parent frequency-control #:value "440"))
+(define frequency-label (make <label> #:parent frequency-control #:text "Hz"))
+(define higher-button (make <button> #:parent frequency-pane #:text ">"))
 
 (gtk-main)
