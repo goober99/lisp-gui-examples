@@ -142,42 +142,50 @@ to increase/decrease the frequency by one octave.
 
 The `<hbox>` is an invisible widget that helps with layout. At this point, we
 are starting to have a nice looking interface, but it doesn't do anything. If
-you click the buttons or slide the slider, nothing happens. The widgets have a
-`command` slot that wires the widgets up to a function. If we add a command to
-the slider, that command will be called each time the slider is moved.
+you click the buttons or slide the slider, nothing happens. Widgets emit
+signals, and callback functions can be connected to these signals. All callback
+functions are called with two parameters: the widget and an event object.
 
 ```scheme
 ; Link slider to text field display of frequency
-(gobject:g-signal-connect slider "change-value"
-  ; Connect to change-value signal of slider instead of value-changed signal of
-  ; its corresponding adjustment object so that frequency will only be updated
-  ; when interactively moved avoiding rounding differences between slider and
-  ; sping button.
-  (lambda (range scroll value)
-    (declare (ignore range scroll))
-    (setf (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field))
-          (position->frequency value))))
-(gobject:g-signal-connect (gtk:gtk-spin-button-adjustment frequency-field) "value-changed"
-  (lambda (adjustment)
-    (setf (gtk:gtk-adjustment-value (gtk:gtk-range-adjustment slider))
-          (frequency->position (gtk:gtk-adjustment-value adjustment)))))
+(define (adjust-frequency widget event)
+  (set! (value frequency-field) (number->string (position->frequency (value widget))))
+  ; Must return #f for event to propagate
+  #f)
+(define (adjust-slider widget event)
+  (define new-freq (string->number (value widget)))
+  (set! (value slider) (frequency->position
+    (if (and new-freq (>= new-freq *min-frequency*)) new-freq *min-frequency*))))
+
+; Connect to change-value signal instead of using #:command callback so that
+; frequency will only be updated when interactively moved avoiding rounding
+; differences between slider and text entry.
+(event-connect slider "change-value" adjust-frequency)
+(event-connect frequency-field "key-release-event" adjust-slider)
 ```
 
 Wire the buttons up to callback functions called `decrease-octave` and
 `increase-octave`. An [octave](https://en.wikipedia.org/wiki/Octave) is "the
-interval between one musical pitch and another with double its frequency."
+interval between one musical pitch and another with double its frequency." Some
+widgets have a `command` slot that connect the widget to a callback function.
+Buttons have a `command` slot that fires when the button is clicked.
 
-```lisp
+```scheme
+; Set frequency slider and display
+(define (set-frequency freq)
+  (when (and (>= freq *min-frequency*) (<= freq *max-frequency*))
+    (set! (value slider) (frequency->position freq))
+    (set! (value frequency-field) (number->string freq))))
+
 ; Buttons increase and decrease frequency by one octave
-(defun set-frequency (freq)
-  (setf (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field)) freq))
-(defun adjust-octave (modifier)
-  (set-frequency (* (gtk:gtk-adjustment-value (gtk:gtk-spin-button-adjustment frequency-field)) modifier)))
-(defun decrease-octave (widget) (declare (ignore widget)) (adjust-octave 0.5))
-(defun increase-octave (widget) (declare (ignore widget)) (adjust-octave 2))
+(define (adjust-octave modifier)
+  (let ((numified (string->number (value frequency-field))))
+    (when numified (set-frequency (* numified modifier)))))
+(define (decrease-octave widget event) (adjust-octave 0.5))
+(define (increase-octave widget event) (adjust-octave 2))
 
-(gobject:g-signal-connect lower-button "clicked" #'decrease-octave)
-(gobject:g-signal-connect higher-button "clicked" #'increase-octave)
+(define lower-button (make <button> #:parent frequency-pane #:text "<" #:command decrease-octave))
+(define higher-button (make <button> #:parent frequency-pane #:text ">" #:command increase-octave))
 ```
 
 We'll reuse the `units-spin-button` function we created to create a field to
